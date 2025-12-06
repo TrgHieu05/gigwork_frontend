@@ -1,3 +1,5 @@
+import LoginForm from "@/components/feature/auth/LoginForm"
+
 export default function LoginPage() {
   return (
     <div className="w-full h-full flex flex-col items-center justify-start gap-8">
@@ -13,6 +15,7 @@ export default function LoginPage() {
                 </a>
             </div>
         </div>
+        <LoginForm />
      </div>
   )
 }
