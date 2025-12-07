@@ -2,7 +2,7 @@ import LoginForm from "@/components/feature/auth/LoginForm"
 
 export default function LoginPage() {
   return (
-    <div className="w-full h-full flex flex-col items-center justify-start gap-8">
+    <div className="w-full h-fit flex flex-col items-center justify-start gap-8">
         <div className="flex items-center justify-between w-full h-fit">
             <div className="inline-flex flex-col items-start justify-center">
                 <p className="text-2xl font-bold text-[#21212c]">Sign in to</p>
