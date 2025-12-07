@@ -1,11 +1,9 @@
-'use client'
+"use client"
 
 import { 
     LayoutDashboard,
-    FileSearch,
-    FilePenLine,
-    History,
-    Bell,
+    Search,
+    FileText,
     Settings,
     LogOut,
 } from "lucide-react";
@@ -25,35 +23,25 @@ import Link from "next/link";
 const itemsTop = [
     {
         title: "Dashboard",
-        url: "/employer/dashboard",
+        url: "/jobseeker/dashboard",
         icon: LayoutDashboard,
     },
     {
-        title: "Jobs",
-        url: "/employer/jobs",
-        icon: FileSearch,
+        title: "Find Jobs",
+        url: "/jobseeker/jobs",
+        icon: Search,
     },
     {
-        title: "My Jobs",
-        url: "/employer/my-jobs",
-        icon: FilePenLine,
-    },
-    {
-        title: "History",
-        url: "/employer/history",    
-        icon: History,
-    },
-    {
-        title: "Notifications",
-        url: "/employer/notifications",
-        icon: Bell,
+        title: "My Applications",
+        url: "/jobseeker/applications",
+        icon: FileText,
     },
 ]
 
 const itemsBottom = [
     {
         title: "Settings",
-        url: "/employer/settings",   
+        url: "/jobseeker/settings",   
         icon: Settings,
     },
     {
@@ -63,7 +51,7 @@ const itemsBottom = [
     },
 ]
 
-export function EmployerSideBar() {
+export function JobseekerSidebar() {
     const pathname = usePathname();
   return (
     <Sidebar>
@@ -75,7 +63,7 @@ export function EmployerSideBar() {
               {itemsTop.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild isActive={pathname === item.url}>
-                    <Link href={item.url} className={pathname === item.url ? "bg-primary text-primary-foreground" : ""}>
+                    <Link href={item.url}>
                       <item.icon />
                       <span>{item.title}</span>
                     </Link>
@@ -105,5 +93,5 @@ export function EmployerSideBar() {
         </SidebarGroup>
       </SidebarContent>
     </Sidebar>
-  );
+  )
 }

@@ -1,11 +1,8 @@
-'use client'
+"use client"
 
 import { 
     LayoutDashboard,
-    FileSearch,
-    FilePenLine,
-    History,
-    Bell,
+    Users,
     Settings,
     LogOut,
 } from "lucide-react";
@@ -25,35 +22,20 @@ import Link from "next/link";
 const itemsTop = [
     {
         title: "Dashboard",
-        url: "/employer/dashboard",
+        url: "/admin/dashboard",
         icon: LayoutDashboard,
     },
     {
-        title: "Jobs",
-        url: "/employer/jobs",
-        icon: FileSearch,
-    },
-    {
-        title: "My Jobs",
-        url: "/employer/my-jobs",
-        icon: FilePenLine,
-    },
-    {
-        title: "History",
-        url: "/employer/history",    
-        icon: History,
-    },
-    {
-        title: "Notifications",
-        url: "/employer/notifications",
-        icon: Bell,
+        title: "Users Management",
+        url: "/admin/users",
+        icon: Users,
     },
 ]
 
 const itemsBottom = [
     {
         title: "Settings",
-        url: "/employer/settings",   
+        url: "/admin/settings",   
         icon: Settings,
     },
     {
@@ -63,19 +45,19 @@ const itemsBottom = [
     },
 ]
 
-export function EmployerSideBar() {
+export function AdminSidebar() {
     const pathname = usePathname();
   return (
     <Sidebar>
       <SidebarContent className="flex flex-col justify-between py-4">
         <SidebarGroup>
-          <SidebarGroupLabel>Main</SidebarGroupLabel>
+          <SidebarGroupLabel>Admin Panel</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {itemsTop.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild isActive={pathname === item.url}>
-                    <Link href={item.url} className={pathname === item.url ? "bg-primary text-primary-foreground" : ""}>
+                    <Link href={item.url}>
                       <item.icon />
                       <span>{item.title}</span>
                     </Link>
@@ -105,5 +87,5 @@ export function EmployerSideBar() {
         </SidebarGroup>
       </SidebarContent>
     </Sidebar>
-  );
+  )
 }
