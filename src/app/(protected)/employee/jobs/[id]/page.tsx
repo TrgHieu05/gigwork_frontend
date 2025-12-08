@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
     ArrowLeft,
     Building,
@@ -18,8 +19,20 @@ import {
     CheckCircle,
     Heart,
     Share2,
+    MessageSquare,
+    Star,
 } from "lucide-react";
 import { ApplyModal, useApplyModal } from "@/components/feature/employee/ApplyModal";
+import { CommentModal, useCommentModal } from "@/components/shared/CommentModal";
+
+interface EmployerComment {
+    id: string;
+    authorName: string;
+    authorAvatar?: string;
+    content: string;
+    rating?: number;
+    createdAt: string;
+}
 
 // Mock job data
 const mockJob = {
@@ -39,6 +52,7 @@ const mockJob = {
     applicants: 12,
     positions: 5,
     isUrgent: true,
+    status: "active" as "active" | "completed",
     description: `We are looking for reliable warehouse assistants to help with our busy holiday season. The role involves picking, packing, and organizing inventory in our modern warehouse facility.
 
 You will be working as part of a dynamic team in a fast-paced environment. This is a great opportunity for those looking for flexible work with competitive pay.`,
@@ -64,16 +78,47 @@ You will be working as part of a dynamic team in a fast-paced environment. This 
     },
 };
 
+// Mock employer comments (for completed jobs)
+const mockEmployerComments: EmployerComment[] = [
+    {
+        id: "1",
+        authorName: "LogiCorp HR",
+        content: "Great worker! Punctual and reliable. Would hire again.",
+        rating: 5,
+        createdAt: "Dec 23, 2025",
+    },
+];
+
+function getInitials(name: string): string {
+    return name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
+}
+
 export default function EmployeeJobDetailsPage() {
     const router = useRouter();
     const [isSaved, setIsSaved] = useState(false);
     const [activeTab, setActiveTab] = useState("description");
     const [applicationStatus, setApplicationStatus] = useState<"none" | "pending" | "approved" | "rejected">("none");
+    const [paymentConfirmed, setPaymentConfirmed] = useState(false);
+    const [employerComments, setEmployerComments] = useState<EmployerComment[]>(mockEmployerComments);
     const { isOpen, openModal, closeModal } = useApplyModal();
+    const { isOpen: isCommentOpen, openModal: openCommentModal, closeModal: closeCommentModal } = useCommentModal();
+
+    // Mock: for completed jobs, set the application status to approved
+    const isCompleted = mockJob.status === "completed";
+    const effectiveStatus = isCompleted ? "approved" : applicationStatus;
 
     const handleApply = () => {
         closeModal();
         setApplicationStatus("pending");
+    };
+
+    const handleConfirmPayment = () => {
+        setPaymentConfirmed(true);
+    };
+
+    const handleSubmitComment = (comment: string, rating?: number) => {
+        // In real app, this would send to the employer
+        console.log("Comment submitted:", { comment, rating });
     };
 
     return (
@@ -92,8 +137,11 @@ export default function EmployeeJobDetailsPage() {
                         <div>
                             <div className="flex items-center gap-2">
                                 <h1 className="text-2xl font-bold">{mockJob.title}</h1>
-                                {mockJob.isUrgent && (
+                                {mockJob.isUrgent && !isCompleted && (
                                     <Badge variant="destructive">Urgent</Badge>
+                                )}
+                                {isCompleted && (
+                                    <Badge className="bg-gray-100 text-gray-700">Completed</Badge>
                                 )}
                             </div>
                             <div className="flex items-center gap-2 text-muted-foreground mt-1">
@@ -165,6 +213,11 @@ export default function EmployeeJobDetailsPage() {
                                 <TabsTrigger value="description">Description</TabsTrigger>
                                 <TabsTrigger value="requirements">Requirements</TabsTrigger>
                                 <TabsTrigger value="employer">Employer</TabsTrigger>
+                                {isCompleted && (
+                                    <TabsTrigger value="comments">
+                                        Employer Comments ({employerComments.length})
+                                    </TabsTrigger>
+                                )}
                             </TabsList>
 
                             <TabsContent value="description">
@@ -252,6 +305,58 @@ export default function EmployeeJobDetailsPage() {
                                     </CardContent>
                                 </Card>
                             </TabsContent>
+
+                            {/* Employer Comments Tab - Only for completed jobs */}
+                            {isCompleted && (
+                                <TabsContent value="comments">
+                                    <div className="space-y-4">
+                                        {employerComments.length === 0 ? (
+                                            <Card>
+                                                <CardContent className="p-12 text-center">
+                                                    <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                                                    <h3 className="font-semibold text-lg mb-2">No comments yet</h3>
+                                                    <p className="text-muted-foreground">
+                                                        The employer hasn't left any comments for this job yet.
+                                                    </p>
+                                                </CardContent>
+                                            </Card>
+                                        ) : (
+                                            employerComments.map((comment) => (
+                                                <Card key={comment.id}>
+                                                    <CardContent className="p-4">
+                                                        <div className="flex items-start gap-4">
+                                                            <Avatar className="h-10 w-10">
+                                                                <AvatarImage src={comment.authorAvatar} />
+                                                                <AvatarFallback>{getInitials(comment.authorName)}</AvatarFallback>
+                                                            </Avatar>
+                                                            <div className="flex-1">
+                                                                <div className="flex items-center justify-between">
+                                                                    <div>
+                                                                        <h4 className="font-semibold">{comment.authorName}</h4>
+                                                                        <p className="text-xs text-muted-foreground">{comment.createdAt}</p>
+                                                                    </div>
+                                                                    {comment.rating && (
+                                                                        <div className="flex items-center gap-0.5">
+                                                                            {[...Array(5)].map((_, i) => (
+                                                                                <Star
+                                                                                    key={i}
+                                                                                    className={`h-4 w-4 ${i < comment.rating! ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
+                                                                                        }`}
+                                                                                />
+                                                                            ))}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                                <p className="mt-2 text-muted-foreground">{comment.content}</p>
+                                                            </div>
+                                                        </div>
+                                                    </CardContent>
+                                                </Card>
+                                            ))
+                                        )}
+                                    </div>
+                                </TabsContent>
+                            )}
                         </Tabs>
                     </div>
 
@@ -268,20 +373,52 @@ export default function EmployeeJobDetailsPage() {
                                     </p>
                                 </div>
 
-                                {applicationStatus === "none" ? (
+                                {isCompleted ? (
+                                    // Completed job actions
+                                    <div className="space-y-3">
+                                        <Badge className="w-full justify-center py-3 bg-gray-100 text-gray-700">
+                                            <CheckCircle className="h-4 w-4 mr-2" />
+                                            Job Completed
+                                        </Badge>
+
+                                        {paymentConfirmed ? (
+                                            <Badge className="w-full justify-center py-2 bg-green-100 text-green-700">
+                                                <CheckCircle className="h-4 w-4 mr-2" />
+                                                Payment Confirmed
+                                            </Badge>
+                                        ) : (
+                                            <Button
+                                                className="w-full bg-green-600 hover:bg-green-700"
+                                                onClick={handleConfirmPayment}
+                                            >
+                                                <CheckCircle className="h-4 w-4 mr-2" />
+                                                Confirm Payment
+                                            </Button>
+                                        )}
+
+                                        <Button
+                                            variant="outline"
+                                            className="w-full"
+                                            onClick={openCommentModal}
+                                        >
+                                            <MessageSquare className="h-4 w-4 mr-2" />
+                                            Leave Comment
+                                        </Button>
+                                    </div>
+                                ) : effectiveStatus === "none" ? (
                                     <Button className="w-full h-12 text-lg" onClick={openModal}>
                                         Apply Now
                                     </Button>
                                 ) : (
-                                    <div className={`w-full h-12 flex items-center justify-center rounded-sm text-lg font-medium ${applicationStatus === "pending"
+                                    <div className={`w-full h-12 flex items-center justify-center rounded-sm text-lg font-medium ${effectiveStatus === "pending"
                                             ? "bg-yellow-100 text-yellow-700"
-                                            : applicationStatus === "approved"
+                                            : effectiveStatus === "approved"
                                                 ? "bg-green-100 text-green-700"
                                                 : "bg-red-100 text-red-700"
                                         }`}>
-                                        {applicationStatus === "pending" && "⏳ Pending"}
-                                        {applicationStatus === "approved" && "✓ Approved"}
-                                        {applicationStatus === "rejected" && "✗ Rejected"}
+                                        {effectiveStatus === "pending" && "⏳ Pending"}
+                                        {effectiveStatus === "approved" && "✓ Approved"}
+                                        {effectiveStatus === "rejected" && "✗ Rejected"}
                                     </div>
                                 )}
 
@@ -317,6 +454,16 @@ export default function EmployeeJobDetailsPage() {
                 onConfirm={handleApply}
                 jobTitle={mockJob.title}
                 company={mockJob.company}
+            />
+
+            {/* Comment Modal */}
+            <CommentModal
+                isOpen={isCommentOpen}
+                onClose={closeCommentModal}
+                onSubmit={handleSubmitComment}
+                recipientName={mockJob.company}
+                showRating={true}
+                title="Rate & Comment Employer"
             />
         </>
     );
