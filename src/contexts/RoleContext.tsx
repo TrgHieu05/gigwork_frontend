@@ -2,13 +2,13 @@
 
 import { createContext, useContext, ReactNode } from "react";
 
-export type UserRole = "employer" | "jobseeker" | "admin";
+export type UserRole = "employer" | "employee" | "admin";
 
 interface RoleContextValue {
     role: UserRole;
     basePath: string;
     isEmployer: boolean;
-    isJobseeker: boolean;
+    isEmployee: boolean;
     isAdmin: boolean;
 }
 
@@ -32,7 +32,7 @@ export function RoleProvider({ role, children }: RoleProviderProps) {
         role,
         basePath: `/${role}`,
         isEmployer: role === "employer",
-        isJobseeker: role === "jobseeker",
+        isEmployee: role === "employee",
         isAdmin: role === "admin",
     };
 

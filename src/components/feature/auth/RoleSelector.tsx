@@ -10,7 +10,7 @@ interface roleSelectorProps<> {
   onSelect: () => void
   icon: React.ReactNode
   active: boolean
-  role: "recruiter" | "jobseeker"
+  role: "recruiter" | "employee"
   description: string
 }
 

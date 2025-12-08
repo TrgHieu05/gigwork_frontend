@@ -126,7 +126,7 @@ interface JobSearchPageProps {
 }
 
 export function JobSearchPage({ jobs = mockJobs }: JobSearchPageProps) {
-    const { role, basePath, isJobseeker } = useRole();
+    const { role, basePath, isEmployee } = useRole();
     const [searchQuery, setSearchQuery] = useState("");
     const [locationQuery, setLocationQuery] = useState("");
     const [selectedCategory, setSelectedCategory] = useState("All");
@@ -154,7 +154,7 @@ export function JobSearchPage({ jobs = mockJobs }: JobSearchPageProps) {
             <div>
                 <h1 className="text-2xl font-bold">Find Jobs</h1>
                 <p className="text-muted-foreground">
-                    {isJobseeker
+                    {isEmployee
                         ? "Discover gig opportunities that match your skills"
                         : "Browse jobs posted by other employers"
                     }
@@ -199,8 +199,8 @@ export function JobSearchPage({ jobs = mockJobs }: JobSearchPageProps) {
                         key={category}
                         onClick={() => setSelectedCategory(category)}
                         className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${selectedCategory === category
-                                ? "bg-primary text-primary-foreground"
-                                : "bg-muted hover:bg-muted/80"
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-muted hover:bg-muted/80"
                             }`}
                     >
                         {category}
@@ -250,16 +250,16 @@ export function JobSearchPage({ jobs = mockJobs }: JobSearchPageProps) {
                                                     <span>{job.company}</span>
                                                 </div>
                                             </div>
-                                            {/* Save button - only for jobseeker */}
-                                            {isJobseeker && (
+                                            {/* Save button - only for employee */}
+                                            {isEmployee && (
                                                 <button
                                                     onClick={() => toggleSaveJob(job.id)}
                                                     className="p-2 hover:bg-muted rounded-full transition-colors"
                                                 >
                                                     <Heart
                                                         className={`h-5 w-5 ${savedJobs.includes(job.id)
-                                                                ? "fill-red-500 text-red-500"
-                                                                : "text-muted-foreground"
+                                                            ? "fill-red-500 text-red-500"
+                                                            : "text-muted-foreground"
                                                             }`}
                                                     />
                                                 </button>
@@ -299,7 +299,7 @@ export function JobSearchPage({ jobs = mockJobs }: JobSearchPageProps) {
                                                     {job.postedDate}
                                                 </span>
                                                 <Link href={`${basePath}/jobs/${job.id}`}>
-                                                    {isJobseeker ? (
+                                                    {isEmployee ? (
                                                         <Button size="small">
                                                             Apply Now
                                                         </Button>

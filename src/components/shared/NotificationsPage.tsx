@@ -85,7 +85,7 @@ const defaultNotifications: Notification[] = [
 ];
 
 export function NotificationsPage({ notifications: initialNotifications = defaultNotifications }: NotificationsPageProps) {
-    const { isJobseeker } = useRole();
+    const { isEmployee } = useRole();
     const [activeTab, setActiveTab] = useState("all");
     const [notifications, setNotifications] = useState(initialNotifications);
 
@@ -136,7 +136,7 @@ export function NotificationsPage({ notifications: initialNotifications = defaul
                     <TabsTrigger value="unread">
                         Unread {unreadCount > 0 && `(${unreadCount})`}
                     </TabsTrigger>
-                    {!isJobseeker && (
+                    {!isEmployee && (
                         <TabsTrigger value="application">Applications</TabsTrigger>
                     )}
                     <TabsTrigger value="job">Jobs</TabsTrigger>

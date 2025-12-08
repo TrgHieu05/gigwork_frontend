@@ -6,6 +6,7 @@ import {
   FileText,
   Settings,
   LogOut,
+  History,
 } from "lucide-react";
 import {
   Sidebar,
@@ -24,30 +25,35 @@ import { LogoutModal, useLogoutModal } from "@/components/shared/LogoutModal";
 const itemsTop = [
   {
     title: "Dashboard",
-    url: "/jobseeker/dashboard",
+    url: "/employee/dashboard",
     icon: LayoutDashboard,
   },
   {
     title: "Find Jobs",
-    url: "/jobseeker/jobs",
+    url: "/employee/jobs",
     icon: Search,
   },
   {
     title: "My Applications",
-    url: "/jobseeker/applications",
+    url: "/employee/applications",
     icon: FileText,
+  },
+  {
+    title: "History",
+    url: "/employee/history",
+    icon: History,
   },
 ]
 
 const itemsBottom = [
   {
     title: "Settings",
-    url: "/jobseeker/settings",
+    url: "/employee/settings",
     icon: Settings,
   },
 ]
 
-export function JobseekerSidebar() {
+export function EmployeeSidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const { isOpen, openModal, closeModal } = useLogoutModal();
