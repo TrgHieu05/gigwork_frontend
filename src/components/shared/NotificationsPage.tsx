@@ -178,8 +178,8 @@ export function NotificationsPage({ notifications: initialNotifications = defaul
                                                     <div className="flex items-center gap-2 shrink-0">
                                                         {!notification.isRead && (
                                                             <Button
-                                                                variant="ghost"
-                                                                size="icon"
+                                                                variant="outline"
+                                                                className="h-8 w-8 p-0 border-0"
                                                                 onClick={() => markAsRead(notification.id)}
                                                                 title="Mark as read"
                                                             >
@@ -187,8 +187,8 @@ export function NotificationsPage({ notifications: initialNotifications = defaul
                                                             </Button>
                                                         )}
                                                         <Button
-                                                            variant="ghost"
-                                                            size="icon"
+                                                            variant="outline"
+                                                            className="h-8 w-8 p-0 border-0 text-muted-foreground"
                                                             onClick={() => deleteNotification(notification.id)}
                                                             title="Delete"
                                                         >

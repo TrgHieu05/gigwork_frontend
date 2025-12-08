@@ -168,7 +168,7 @@ export default function JobDetailsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => router.back()}>
+          <Button variant="outline" className="h-9 w-9 p-0 border-0" onClick={() => router.back()}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
@@ -182,7 +182,7 @@ export default function JobDetailsPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon">
+          <Button variant="outline" className="h-9 w-9 p-0">
             <Share2 className="h-4 w-4" />
           </Button>
           {isActive && (

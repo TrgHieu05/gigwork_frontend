@@ -11,13 +11,11 @@ const buttonVariants = cva(
 				default: "bg-primary text-primary-foreground hover:bg-primary/90 active:bg-primary/80",
 				outline: "border border-primary text-primary bg-transparent hover:bg-primary/10 active:bg-background/10",
 				destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90 active:bg-destructive/80",
-				ghost: "bg-transparent hover:bg-muted active:bg-muted/80",
 			},
 
 			size: {
 				default: "h-9",
 				small: "h-7",
-				icon: "h-9 w-9 p-0",
 			}
 		},
 		defaultVariants: {

@@ -72,17 +72,15 @@ export function PendingApplicationsCard({
                             </div>
                             <div className="flex gap-1">
                                 <Button
-                                    size="icon"
-                                    variant="ghost"
-                                    className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-100"
+                                    className="h-8 w-8 p-0 border-0 text-green-600 hover:text-green-700 hover:bg-green-100"
+                                    variant="outline"
                                     onClick={() => onApprove?.(app.id)}
                                 >
                                     <CheckCircle className="h-4 w-4" />
                                 </Button>
                                 <Button
-                                    size="icon"
-                                    variant="ghost"
-                                    className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-100"
+                                    className="h-8 w-8 p-0 border-0 text-red-600 hover:text-red-700 hover:bg-red-100"
+                                    variant="outline"
                                     onClick={() => onReject?.(app.id)}
                                 >
                                     <XCircle className="h-4 w-4" />
