@@ -16,8 +16,8 @@ import { Button } from "@/components/ui/button"
 export function ForgotPasswordForm() {
   return (
     <div className="flex flex-col items-start w-full h-fit gap-8">
-        
-      <p className="w-full text-left text-base text-black">Enter your account’s email address.<br></br>We will use this address to send you a verification code.</p>
+
+      <p className="w-full text-left text-base text-black">Enter your account’s email address.<br></br>We will use this address to send you a verification link.</p>
       <FieldGroup>
         <FieldSet>
           <Field>
@@ -30,7 +30,7 @@ export function ForgotPasswordForm() {
 
       <div className="flex items-center w-full h-fit justify-center">
         <Button variant="default" size="default" className="w-full h-12">
-          Send verification code
+          Send verification link
         </Button>
       </div>
     </div>
