@@ -3,10 +3,10 @@
 import {
   LayoutDashboard,
   Search,
-  FileText,
+  History,
+  Bell,
   Settings,
   LogOut,
-  History,
 } from "lucide-react";
 import {
   Sidebar,
@@ -34,14 +34,14 @@ const itemsTop = [
     icon: Search,
   },
   {
-    title: "My Applications",
-    url: "/employee/applications",
-    icon: FileText,
-  },
-  {
     title: "History",
     url: "/employee/history",
     icon: History,
+  },
+  {
+    title: "Notification",
+    url: "/employee/notifications",
+    icon: Bell,
   },
 ]
 
@@ -59,7 +59,6 @@ export function EmployeeSidebar() {
   const { isOpen, openModal, closeModal } = useLogoutModal();
 
   const handleLogout = () => {
-    // Add logout logic here
     console.log("Logging out...");
     closeModal();
     router.push("/login");

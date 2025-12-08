@@ -299,15 +299,9 @@ export function JobSearchPage({ jobs = mockJobs }: JobSearchPageProps) {
                                                     {job.postedDate}
                                                 </span>
                                                 <Link href={`${basePath}/jobs/${job.id}`}>
-                                                    {isEmployee ? (
-                                                        <Button size="small">
-                                                            Apply Now
-                                                        </Button>
-                                                    ) : (
-                                                        <Button variant="outline" size="small">
-                                                            View Details
-                                                        </Button>
-                                                    )}
+                                                    <Button variant="outline" size="small">
+                                                        View Details
+                                                    </Button>
                                                 </Link>
                                             </div>
                                         </div>
