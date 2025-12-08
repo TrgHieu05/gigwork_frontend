@@ -7,12 +7,17 @@ export default function EmployeeLayout({
 }: Readonly<{ children: React.ReactNode }>) {
     return (
         <RoleProvider role="employee">
-            <SidebarProvider>
-                <div className="flex min-h-screen w-full">
+            <div className="h-screen w-screen flex flex-row">
+                {/* LEFT */}
+                <SidebarProvider>
                     <EmployeeSidebar />
-                    <main className="flex-1 bg-[#f9f9f9]">{children}</main>
+                </SidebarProvider>
+
+                {/* RIGHT */}
+                <div className="h-full flex-1 bg-[#f9f9f9]">
+                    {children}
                 </div>
-            </SidebarProvider>
+            </div>
         </RoleProvider>
     );
 }
