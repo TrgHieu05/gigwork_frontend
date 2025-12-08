@@ -18,24 +18,17 @@ import {
 } from "lucide-react";
 
 interface JobFormData {
-    // Basic Information
     title: string;
     category: string;
     positions: number;
-
-    // Duration & Schedule
     startDate: string;
     endDate: string;
     duration: string;
     workSchedule: string;
-
-    // Location & Compensation
     location: string;
     address: string;
     salary: string;
     salaryType: string;
-
-    // Description & Requirements
     description: string;
     requirements: string[];
     benefits: string[];
@@ -103,7 +96,6 @@ export default function CreateJobPage() {
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         console.log("Form submitted:", formData);
-        // In real app, this would call an API
         router.push("/employer/my-jobs");
     };
 
@@ -321,12 +313,7 @@ export default function CreateJobPage() {
                                     )}
                                 </div>
                             ))}
-                            <Button
-                                type="button"
-                                variant="outline"
-                                size="small"
-                                onClick={addRequirement}
-                            >
+                            <Button type="button" variant="outline" size="small" onClick={addRequirement}>
                                 <Plus className="h-4 w-4 mr-2" />
                                 Add Requirement
                             </Button>
@@ -354,12 +341,7 @@ export default function CreateJobPage() {
                                     )}
                                 </div>
                             ))}
-                            <Button
-                                type="button"
-                                variant="outline"
-                                size="small"
-                                onClick={addBenefit}
-                            >
+                            <Button type="button" variant="outline" size="small" onClick={addBenefit}>
                                 <Plus className="h-4 w-4 mr-2" />
                                 Add Benefit
                             </Button>

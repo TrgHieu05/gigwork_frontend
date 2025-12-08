@@ -22,7 +22,6 @@ import {
   XCircle,
   AlertCircle,
 } from "lucide-react";
-import Link from "next/link";
 
 type JobStatus = "open" | "full" | "closed" | "upcoming" | "ongoing" | "completed";
 type ApplicationStatus = "pending" | "approved" | "rejected";
