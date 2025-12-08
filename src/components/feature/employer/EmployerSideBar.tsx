@@ -9,6 +9,7 @@ import {
   Settings,
   LogOut,
   Plus,
+  User,
 } from "lucide-react";
 import {
   Sidebar,
@@ -19,6 +20,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarHeader,
 } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button";
 import { usePathname, useRouter } from "next/navigation";
@@ -53,7 +55,6 @@ const itemsTop = [
   },
 ]
 
-// Removed "Log out" from here to handle it separately
 const itemsBottom = [
   {
     title: "Settings",
@@ -62,13 +63,18 @@ const itemsBottom = [
   },
 ]
 
+// Mock user data
+const mockUser = {
+  name: "Jane Smith",
+  avatar: null,
+};
+
 export function EmployerSideBar() {
   const pathname = usePathname();
   const router = useRouter();
   const { isOpen, openModal, closeModal } = useLogoutModal();
 
   const handleLogout = () => {
-    // Add logout logic here (e.g. clear tokens)
     console.log("Logging out...");
     closeModal();
     router.push("/login");
@@ -79,6 +85,16 @@ export function EmployerSideBar() {
       <Sidebar>
         <SidebarContent className="flex flex-col justify-between py-4">
           <div>
+            {/* Logo */}
+            <SidebarHeader className="px-4 pb-4">
+              <Link href="/employer/dashboard" className="flex items-center">
+                <span className="text-2xl font-bold">
+                  <span className="text-primary">gig</span>
+                  <span className="text-foreground">work</span>
+                </span>
+              </Link>
+            </SidebarHeader>
+
             {/* Post Job CTA */}
             <div className="px-3 mb-4">
               <Link href="/employer/create-job">
@@ -112,6 +128,18 @@ export function EmployerSideBar() {
             <SidebarGroupLabel>Account</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
+                {/* Profile */}
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={pathname === "/employer/profile"}>
+                    <Link href="/employer/profile" className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+                        <User className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                      <span className="font-medium">{mockUser.name}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+
                 {itemsBottom.map((item) => (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild isActive={pathname === item.url}>

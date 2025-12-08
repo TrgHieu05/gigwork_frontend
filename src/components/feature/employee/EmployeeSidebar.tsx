@@ -7,6 +7,7 @@ import {
   Bell,
   Settings,
   LogOut,
+  User,
 } from "lucide-react";
 import {
   Sidebar,
@@ -17,6 +18,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarHeader,
 } from "@/components/ui/sidebar"
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
@@ -53,6 +55,12 @@ const itemsBottom = [
   },
 ]
 
+// Mock user data
+const mockUser = {
+  name: "John Doe",
+  avatar: null, // No avatar image, will use icon
+};
+
 export function EmployeeSidebar() {
   const pathname = usePathname();
   const router = useRouter();
@@ -68,28 +76,52 @@ export function EmployeeSidebar() {
     <>
       <Sidebar>
         <SidebarContent className="flex flex-col justify-between py-4">
-          <SidebarGroup>
-            <SidebarGroupLabel>Main</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {itemsTop.map((item) => (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild isActive={pathname === item.url}>
-                      <Link href={item.url}>
-                        <item.icon />
-                        <span>{item.title}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
+          {/* Logo */}
+          <div>
+            <SidebarHeader className="px-4 pb-4">
+              <Link href="/employee/dashboard" className="flex items-center">
+                <span className="text-2xl font-bold">
+                  <span className="text-primary">gig</span>
+                  <span className="text-foreground">work</span>
+                </span>
+              </Link>
+            </SidebarHeader>
+
+            <SidebarGroup>
+              <SidebarGroupLabel>Main</SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {itemsTop.map((item) => (
+                    <SidebarMenuItem key={item.title}>
+                      <SidebarMenuButton asChild isActive={pathname === item.url}>
+                        <Link href={item.url}>
+                          <item.icon />
+                          <span>{item.title}</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          </div>
 
           <SidebarGroup>
             <SidebarGroupLabel>Account</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
+                {/* Profile */}
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={pathname === "/employee/profile"}>
+                    <Link href="/employee/profile" className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+                        <User className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                      <span className="font-medium">{mockUser.name}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+
                 {itemsBottom.map((item) => (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild isActive={pathname === item.url}>
