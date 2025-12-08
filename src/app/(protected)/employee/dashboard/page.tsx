@@ -4,11 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileText, CheckSquare, DollarSign, ArrowRight } from "lucide-react";
 import Link from "next/link";
 
-// Import extracted components
+// Import shared components
 import { JobCalendar } from "@/components/feature/employee/JobCalendar";
 import { EmployeeStatsCard } from "@/components/feature/employee/EmployeeStatsCard";
-import { ActiveJobCard, type ActiveJob } from "@/components/feature/employee/ActiveJobCard";
-import { ApplicationCard, type Application } from "@/components/feature/employee/ApplicationCard";
+import { EmployeeJobCard, type EmployeeJob } from "@/components/feature/employee/EmployeeJobCard";
+import { EmployeeApplicationCard, type EmployeeApplication } from "@/components/feature/employee/EmployeeApplicationCard";
 
 // Mock data
 const mockStats = {
@@ -17,7 +17,7 @@ const mockStats = {
     totalEarned: { amount: 250, changePercent: 67.5 },
 };
 
-const mockActiveJobs: ActiveJob[] = [
+const mockActiveJobs: EmployeeJob[] = [
     {
         id: "1",
         title: "Warehouse Assistant",
@@ -26,7 +26,7 @@ const mockActiveJobs: ActiveJob[] = [
         status: "Upcoming",
         startDate: "20/12/2025",
         duration: "3 days",
-        location: "71/10, TL14 Street, Anh Phu Dong Ward, District 12, TPHCM",
+        location: "District 12, TPHCM",
     },
     {
         id: "2",
@@ -36,7 +36,7 @@ const mockActiveJobs: ActiveJob[] = [
         status: "Upcoming",
         startDate: "22/12/2025",
         duration: "2 days",
-        location: "Convention Center, District 7, TPHCM",
+        location: "District 7, TPHCM",
     },
     {
         id: "3",
@@ -46,11 +46,11 @@ const mockActiveJobs: ActiveJob[] = [
         status: "In Progress",
         startDate: "18/12/2025",
         duration: "5 days",
-        location: "Vincom Plaza, District 1, TPHCM",
+        location: "District 1, TPHCM",
     },
 ];
 
-const mockRecentApplications: Application[] = [
+const mockRecentApplications: EmployeeApplication[] = [
     {
         id: "1",
         title: "Restaurant Server",
@@ -136,7 +136,7 @@ export default function EmployeeDashboard() {
                         </CardHeader>
                         <CardContent className="space-y-4">
                             {mockActiveJobs.map((job) => (
-                                <ActiveJobCard key={job.id} job={job} />
+                                <EmployeeJobCard key={job.id} job={job} variant="active" />
                             ))}
                         </CardContent>
                     </Card>
@@ -155,7 +155,7 @@ export default function EmployeeDashboard() {
                             <div className="flex items-center justify-between">
                                 <CardTitle className="text-lg">Recent Applications</CardTitle>
                                 <Link
-                                    href="/employee/applications"
+                                    href="/employee/history"
                                     className="text-sm text-primary flex items-center gap-1 hover:underline"
                                 >
                                     See all <ArrowRight className="h-4 w-4" />
@@ -164,7 +164,7 @@ export default function EmployeeDashboard() {
                         </CardHeader>
                         <CardContent>
                             {mockRecentApplications.map((app) => (
-                                <ApplicationCard key={app.id} application={app} />
+                                <EmployeeApplicationCard key={app.id} application={app} variant="compact" />
                             ))}
                         </CardContent>
                     </Card>
