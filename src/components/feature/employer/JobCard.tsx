@@ -34,6 +34,8 @@ export interface JobCardData {
 
 interface JobCardProps {
     job: JobCardData;
+    isOwner?: boolean; // If true, show edit/applicant actions; if false, only show view details
+    variant?: "full" | "compact"; // full = all details, compact = simplified for history
     onEdit?: (id: string) => void;
     onClose?: (id: string) => void;
     onRepost?: (id: string) => void;
@@ -48,9 +50,52 @@ const statusConfig: Record<JobStatus, { label: string; variant: "default" | "sec
     completed: { label: "Completed", variant: "secondary" },
 };
 
-export function JobCard({ job, onEdit, onClose, onRepost }: JobCardProps) {
+export function JobCard({ job, isOwner = true, variant = "full", onEdit, onClose, onRepost }: JobCardProps) {
     const isActive = job.status === "open" || job.status === "ongoing";
 
+    // Compact variant for history page
+    if (variant === "compact") {
+        return (
+            <Link href={`/employer/jobs/${job.id}`}>
+                <Card className="hover:shadow-md transition-shadow">
+                    <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <div className="flex items-center gap-2">
+                                    <h3 className="font-semibold">{job.title}</h3>
+                                    <Badge variant={statusConfig[job.status].variant}>
+                                        {statusConfig[job.status].label}
+                                    </Badge>
+                                </div>
+                                <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
+                                    <span className="flex items-center gap-1">
+                                        <MapPin className="h-4 w-4" />
+                                        {job.location}
+                                    </span>
+                                    <span className="flex items-center gap-1">
+                                        <Calendar className="h-4 w-4" />
+                                        {job.dateRange}
+                                    </span>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-6 text-sm">
+                                <span className="flex items-center gap-1">
+                                    <Users className="h-4 w-4 text-primary" />
+                                    <span className="font-medium">{job.applicantsCount}</span>
+                                </span>
+                                <span className="flex items-center gap-1">
+                                    <UserCheck className="h-4 w-4 text-green-600" />
+                                    <span className="font-medium">{job.hiredCount}</span>
+                                </span>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+            </Link>
+        );
+    }
+
+    // Full variant (default)
     return (
         <Card className="w-full">
             <CardContent className="p-5 space-y-4">
@@ -64,9 +109,11 @@ export function JobCard({ job, onEdit, onClose, onRepost }: JobCardProps) {
                             {statusConfig[job.status].label}
                         </Badge>
                     </div>
-                    <button className="p-1 hover:bg-muted rounded">
-                        <MoreVertical className="h-5 w-5 text-muted-foreground" />
-                    </button>
+                    {isOwner && (
+                        <button className="p-1 hover:bg-muted rounded">
+                            <MoreVertical className="h-5 w-5 text-muted-foreground" />
+                        </button>
+                    )}
                 </div>
 
                 {/* Job Details Row */}
@@ -113,9 +160,9 @@ export function JobCard({ job, onEdit, onClose, onRepost }: JobCardProps) {
 
                 {/* Action Buttons */}
                 <div className="flex items-center gap-3 pt-2">
-                    {isActive ? (
+                    {isOwner && isActive ? (
                         <>
-                            <Link href={`/employer/jobs/${job.id}/applicants`} className="flex-1">
+                            <Link href={`/employer/jobs/${job.id}?tab=applications`} className="flex-1">
                                 <Button variant="outline" className="w-full">
                                     <Users className="h-4 w-4 mr-2" />
                                     View Applicants ({job.applicantsCount})
@@ -133,7 +180,7 @@ export function JobCard({ job, onEdit, onClose, onRepost }: JobCardProps) {
                                 Close Job
                             </Button>
                         </>
-                    ) : (
+                    ) : isOwner ? (
                         <>
                             <Link href={`/employer/jobs/${job.id}`} className="flex-1">
                                 <Button variant="outline" className="w-full">
@@ -145,6 +192,12 @@ export function JobCard({ job, onEdit, onClose, onRepost }: JobCardProps) {
                                 Repost Job
                             </Button>
                         </>
+                    ) : (
+                        <Link href={`/employer/jobs/${job.id}`} className="flex-1">
+                            <Button variant="outline" className="w-full">
+                                View Details
+                            </Button>
+                        </Link>
                     )}
                 </div>
             </CardContent>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -21,6 +21,8 @@ import {
   CheckCircle,
   XCircle,
   AlertCircle,
+  Mail,
+  Phone,
 } from "lucide-react";
 
 type JobStatus = "open" | "full" | "closed" | "upcoming" | "ongoing" | "completed";
@@ -116,7 +118,7 @@ const mockApplications: Application[] = [
   { id: "2", applicantName: "Emily Johnson", appliedDate: "Oct 14, 2024", status: "approved", experience: "3 years logistics", phone: "(555) 234-5678", email: "emily@email.com" },
   { id: "3", applicantName: "Michael Brown", appliedDate: "Oct 13, 2024", status: "pending", experience: "1 year retail", phone: "(555) 345-6789", email: "michael@email.com" },
   { id: "4", applicantName: "Sarah Davis", appliedDate: "Oct 12, 2024", status: "rejected", experience: "No experience", phone: "(555) 456-7890", email: "sarah@email.com" },
-  { id: "5", applicantName: "James Wilson", appliedDate: "Oct 11, 2024", status: "pending", experience: "5 years warehouse", phone: "(555) 567-8901", email: "james@email.com" },
+  { id: "5", applicantName: "James Wilson", appliedDate: "Oct 11, 2024", status: "approved", experience: "5 years warehouse", phone: "(555) 567-8901", email: "james@email.com" },
 ];
 
 const statusConfig: Record<JobStatus, { label: string; variant: "default" | "secondary" | "outline" }> = {
@@ -141,11 +143,16 @@ function getInitials(name: string): string {
 export default function JobDetailsPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const jobId = params.id as string;
-  const [activeTab, setActiveTab] = useState("details");
+
+  // Get initial tab from URL query param
+  const initialTab = searchParams.get("tab") || "details";
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [applications, setApplications] = useState(mockApplications);
 
   const job = mockJobDetails[jobId] || mockJobDetails["1"];
+  const isOwner = true; // Mock: In real app, check if current user owns this job
   const isActive = job.status === "open" || job.status === "ongoing";
 
   const handleApprove = (appId: string) => {
@@ -162,6 +169,7 @@ export default function JobDetailsPage() {
 
   const pendingCount = applications.filter(a => a.status === "pending").length;
   const approvedCount = applications.filter(a => a.status === "approved").length;
+  const approvedEmployees = applications.filter(a => a.status === "approved");
 
   return (
     <div className="h-full p-6 space-y-6 overflow-auto">
@@ -185,7 +193,7 @@ export default function JobDetailsPage() {
           <Button variant="outline" className="h-9 w-9 p-0">
             <Share2 className="h-4 w-4" />
           </Button>
-          {isActive && (
+          {isOwner && isActive && (
             <>
               <Button variant="outline">
                 <Pencil className="h-4 w-4 mr-2" />
@@ -252,7 +260,12 @@ export default function JobDetailsPage() {
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="details">Job Details</TabsTrigger>
-          <TabsTrigger value="applications">Applications ({applications.length})</TabsTrigger>
+          {isOwner && (
+            <>
+              <TabsTrigger value="applications">Applications ({applications.length})</TabsTrigger>
+              <TabsTrigger value="employees">Employees ({approvedCount})</TabsTrigger>
+            </>
+          )}
         </TabsList>
 
         {/* Job Details Tab */}
@@ -343,73 +356,135 @@ export default function JobDetailsPage() {
           </div>
         </TabsContent>
 
-        {/* Applications Tab */}
-        <TabsContent value="applications">
-          <div className="space-y-4">
-            {applications.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground">
-                No applications yet
-              </div>
-            ) : (
-              applications.map((app) => {
-                const StatusIcon = applicationStatusConfig[app.status].icon;
-                return (
-                  <Card key={app.id}>
+        {/* Applications Tab (Owner Only) */}
+        {isOwner && (
+          <TabsContent value="applications">
+            <div className="space-y-4">
+              {applications.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  No applications yet
+                </div>
+              ) : (
+                applications.map((app) => {
+                  const StatusIcon = applicationStatusConfig[app.status].icon;
+                  return (
+                    <Card key={app.id}>
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                            <Avatar className="h-12 w-12">
+                              <AvatarImage src={app.applicantAvatar} />
+                              <AvatarFallback>{getInitials(app.applicantName)}</AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <h3 className="font-semibold">{app.applicantName}</h3>
+                              <p className="text-sm text-muted-foreground">{app.experience}</p>
+                              <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
+                                <span className="flex items-center gap-1">
+                                  <Mail className="h-3 w-3" />
+                                  {app.email}
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <Phone className="h-3 w-3" />
+                                  {app.phone}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-4">
+                            <div className="text-right">
+                              <Badge variant={applicationStatusConfig[app.status].variant}>
+                                <StatusIcon className="h-3 w-3 mr-1" />
+                                {applicationStatusConfig[app.status].label}
+                              </Badge>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                Applied {app.appliedDate}
+                              </p>
+                            </div>
+                            {app.status === "pending" && (
+                              <div className="flex gap-2">
+                                <Button
+                                  size="small"
+                                  onClick={() => handleApprove(app.id)}
+                                  className="bg-green-600 hover:bg-green-700"
+                                >
+                                  <CheckCircle className="h-4 w-4 mr-1" />
+                                  Approve
+                                </Button>
+                                <Button
+                                  size="small"
+                                  variant="destructive"
+                                  onClick={() => handleReject(app.id)}
+                                >
+                                  <XCircle className="h-4 w-4 mr-1" />
+                                  Reject
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })
+              )}
+            </div>
+          </TabsContent>
+        )}
+
+        {/* Employees Tab (Owner Only) */}
+        {isOwner && (
+          <TabsContent value="employees">
+            <div className="space-y-4">
+              {approvedEmployees.length === 0 ? (
+                <Card>
+                  <CardContent className="p-12 text-center">
+                    <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="font-semibold text-lg mb-2">No employees assigned yet</h3>
+                    <p className="text-muted-foreground">
+                      Approved applicants will appear here. Go to the Applications tab to review and approve applicants.
+                    </p>
+                  </CardContent>
+                </Card>
+              ) : (
+                approvedEmployees.map((emp) => (
+                  <Card key={emp.id}>
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
                           <Avatar className="h-12 w-12">
-                            <AvatarImage src={app.applicantAvatar} />
-                            <AvatarFallback>{getInitials(app.applicantName)}</AvatarFallback>
+                            <AvatarImage src={emp.applicantAvatar} />
+                            <AvatarFallback>{getInitials(emp.applicantName)}</AvatarFallback>
                           </Avatar>
                           <div>
-                            <h3 className="font-semibold">{app.applicantName}</h3>
-                            <p className="text-sm text-muted-foreground">{app.experience}</p>
-                            <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
-                              <span>{app.email}</span>
-                              <span>{app.phone}</span>
-                            </div>
+                            <h3 className="font-semibold">{emp.applicantName}</h3>
+                            <p className="text-sm text-muted-foreground">{emp.experience}</p>
                           </div>
                         </div>
                         <div className="flex items-center gap-4">
-                          <div className="text-right">
-                            <Badge variant={applicationStatusConfig[app.status].variant}>
-                              <StatusIcon className="h-3 w-3 mr-1" />
-                              {applicationStatusConfig[app.status].label}
-                            </Badge>
-                            <p className="text-xs text-muted-foreground mt-1">
-                              Applied {app.appliedDate}
-                            </p>
-                          </div>
-                          {app.status === "pending" && (
-                            <div className="flex gap-2">
-                              <Button
-                                size="small"
-                                onClick={() => handleApprove(app.id)}
-                                className="bg-green-600 hover:bg-green-700"
-                              >
-                                <CheckCircle className="h-4 w-4 mr-1" />
-                                Approve
-                              </Button>
-                              <Button
-                                size="small"
-                                variant="destructive"
-                                onClick={() => handleReject(app.id)}
-                              >
-                                <XCircle className="h-4 w-4 mr-1" />
-                                Reject
-                              </Button>
+                          <div className="text-right text-sm">
+                            <div className="flex items-center gap-2 text-muted-foreground">
+                              <Mail className="h-4 w-4" />
+                              <span>{emp.email}</span>
                             </div>
-                          )}
+                            <div className="flex items-center gap-2 text-muted-foreground mt-1">
+                              <Phone className="h-4 w-4" />
+                              <span>{emp.phone}</span>
+                            </div>
+                          </div>
+                          <Badge variant="default" className="bg-green-600">
+                            <CheckCircle className="h-3 w-3 mr-1" />
+                            Hired
+                          </Badge>
                         </div>
                       </div>
                     </CardContent>
                   </Card>
-                );
-              })
-            )}
-          </div>
-        </TabsContent>
+                ))
+              )}
+            </div>
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   );

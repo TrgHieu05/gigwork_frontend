@@ -6,28 +6,13 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
-  MapPin,
-  Calendar,
-  Users,
-  UserCheck,
   Briefcase,
   DollarSign,
 } from "lucide-react";
-import Link from "next/link";
+import { JobCard, JobCardData } from "@/components/feature/employer/JobCard";
 
 // Types
-type JobHistoryStatus = "open" | "ongoing" | "completed" | "closed";
 type ApplicationHistoryStatus = "pending" | "approved" | "rejected";
-
-interface JobHistory {
-  id: string;
-  title: string;
-  status: JobHistoryStatus;
-  location: string;
-  dateRange: string;
-  applicantsCount: number;
-  hiredCount: number;
-}
 
 interface ApplicationHistory {
   id: string;
@@ -48,11 +33,11 @@ interface HiredEmployee {
 }
 
 // Mock data
-const mockJobs: JobHistory[] = [
-  { id: "1", title: "Warehouse Associate", status: "open", location: "Chicago, IL", dateRange: "Oct 22 - Oct 26", applicantsCount: 67, hiredCount: 12 },
-  { id: "2", title: "Retail Sales Associate", status: "completed", location: "New York, NY", dateRange: "Oct 15 - Oct 21", applicantsCount: 89, hiredCount: 15 },
-  { id: "3", title: "Event Staff", status: "ongoing", location: "Los Angeles, CA", dateRange: "Oct 25 - Oct 27", applicantsCount: 45, hiredCount: 8 },
-  { id: "4", title: "Construction Helper", status: "closed", location: "Houston, TX", dateRange: "Oct 1 - Oct 7", applicantsCount: 56, hiredCount: 10 },
+const mockJobs: JobCardData[] = [
+  { id: "1", title: "Warehouse Associate", status: "open", location: "Chicago, IL", duration: "5 days", salary: "$18/hr", dateRange: "Oct 22 - Oct 26", applicantsCount: 67, hiredCount: 12, viewsCount: 432, postedDate: "Oct 8, 2024" },
+  { id: "2", title: "Retail Sales Associate", status: "completed", location: "New York, NY", duration: "1 week", salary: "$19/hr", dateRange: "Oct 15 - Oct 21", applicantsCount: 89, hiredCount: 15, viewsCount: 567, postedDate: "Oct 1, 2024" },
+  { id: "3", title: "Event Staff", status: "ongoing", location: "Los Angeles, CA", duration: "3 days", salary: "$22/hr", dateRange: "Oct 25 - Oct 27", applicantsCount: 45, hiredCount: 8, viewsCount: 298, postedDate: "Oct 10, 2024" },
+  { id: "4", title: "Construction Helper", status: "closed", location: "Houston, TX", duration: "1 week", salary: "$17/hr", dateRange: "Oct 1 - Oct 7", applicantsCount: 56, hiredCount: 10, viewsCount: 445, postedDate: "Sep 20, 2024" },
 ];
 
 const mockApplications: ApplicationHistory[] = [
@@ -67,13 +52,6 @@ const mockHiredEmployees: HiredEmployee[] = [
   { id: "2", name: "Lisa Anderson", jobTitle: "Retail Sales", hiredDate: "Oct 15, 2024", salary: "$19/hr" },
   { id: "3", name: "Robert Taylor", jobTitle: "Event Staff", hiredDate: "Oct 14, 2024", salary: "$22/hr" },
 ];
-
-const jobStatusConfig: Record<JobHistoryStatus, { label: string; variant: "default" | "secondary" | "outline" }> = {
-  open: { label: "Open", variant: "default" },
-  ongoing: { label: "Ongoing", variant: "default" },
-  completed: { label: "Completed", variant: "secondary" },
-  closed: { label: "Closed", variant: "secondary" },
-};
 
 const appStatusConfig: Record<ApplicationHistoryStatus, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
   pending: { label: "Pending", variant: "outline" },
@@ -119,52 +97,17 @@ export default function HistoryPage() {
                   key={filter}
                   onClick={() => setJobFilter(filter)}
                   className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${jobFilter === filter
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted hover:bg-muted/80"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted hover:bg-muted/80"
                     }`}
                 >
                   {filter.charAt(0).toUpperCase() + filter.slice(1)}
                 </button>
               ))}
             </div>
-            {/* Job List */}
+            {/* Job List - Using JobCard with compact variant */}
             {filteredJobs.map((job) => (
-              <Link key={job.id} href={`/employer/jobs/${job.id}`}>
-                <Card className="hover:shadow-md transition-shadow">
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-semibold">{job.title}</h3>
-                          <Badge variant={jobStatusConfig[job.status].variant}>
-                            {jobStatusConfig[job.status].label}
-                          </Badge>
-                        </div>
-                        <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
-                          <span className="flex items-center gap-1">
-                            <MapPin className="h-4 w-4" />
-                            {job.location}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Calendar className="h-4 w-4" />
-                            {job.dateRange}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-6 text-sm">
-                        <span className="flex items-center gap-1">
-                          <Users className="h-4 w-4 text-primary" />
-                          <span className="font-medium">{job.applicantsCount}</span>
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <UserCheck className="h-4 w-4 text-green-600" />
-                          <span className="font-medium">{job.hiredCount}</span>
-                        </span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
+              <JobCard key={job.id} job={job} variant="compact" isOwner={true} />
             ))}
           </div>
         </TabsContent>
@@ -179,8 +122,8 @@ export default function HistoryPage() {
                   key={filter}
                   onClick={() => setAppFilter(filter)}
                   className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${appFilter === filter
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted hover:bg-muted/80"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted hover:bg-muted/80"
                     }`}
                 >
                   {filter.charAt(0).toUpperCase() + filter.slice(1)}
