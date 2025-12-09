@@ -37,7 +37,10 @@ const jobTypes: { value: JobType; label: string }[] = [
 interface JobFormData {
     title: string;
     description: string;
-    location: string;
+    province: string;
+    city: string;
+    ward: string;
+    address: string;
     startDate: string;
     durationDays: number;
     workerQuota: number;
@@ -52,7 +55,10 @@ export default function CreateJobPage() {
     const [formData, setFormData] = useState<JobFormData>({
         title: "",
         description: "",
-        location: "",
+        province: "",
+        city: "",
+        ward: "",
+        address: "",
         startDate: "",
         durationDays: 1,
         workerQuota: 1,
@@ -80,8 +86,18 @@ export default function CreateJobPage() {
             setIsSubmitting(false);
             return;
         }
-        if (!formData.location.trim()) {
-            setError("Location is required");
+        if (!formData.address.trim()) {
+            setError("Address is required");
+            setIsSubmitting(false);
+            return;
+        }
+        if (!formData.city.trim()) {
+            setError("City is required");
+            setIsSubmitting(false);
+            return;
+        }
+        if (!formData.province.trim()) {
+            setError("Province is required");
             setIsSubmitting(false);
             return;
         }
@@ -95,7 +111,12 @@ export default function CreateJobPage() {
             await jobsService.createJob({
                 title: formData.title,
                 description: formData.description,
-                location: formData.location,
+                location: {
+                    province: formData.province,
+                    city: formData.city,
+                    ward: formData.ward || undefined,
+                    address: formData.address,
+                },
                 startDate: new Date(formData.startDate).toISOString(),
                 durationDays: formData.durationDays,
                 workerQuota: formData.workerQuota,
@@ -194,16 +215,49 @@ export default function CreateJobPage() {
                             Location
                         </CardTitle>
                     </CardHeader>
-                    <CardContent>
-                        <div className="space-y-2">
-                            <Label htmlFor="location">Work Location *</Label>
-                            <Input
-                                id="location"
-                                placeholder="e.g., District 7, Ho Chi Minh City"
-                                value={formData.location}
-                                onChange={(e) => updateField("location", e.target.value)}
-                                required
-                            />
+                    <CardContent className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="province">Province/Region *</Label>
+                                <Input
+                                    id="province"
+                                    placeholder="e.g., Ho Chi Minh"
+                                    value={formData.province}
+                                    onChange={(e) => updateField("province", e.target.value)}
+                                    required
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="city">City/District *</Label>
+                                <Input
+                                    id="city"
+                                    placeholder="e.g., District 7"
+                                    value={formData.city}
+                                    onChange={(e) => updateField("city", e.target.value)}
+                                    required
+                                />
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="ward">Ward (Optional)</Label>
+                                <Input
+                                    id="ward"
+                                    placeholder="e.g., Tan Phu Ward"
+                                    value={formData.ward}
+                                    onChange={(e) => updateField("ward", e.target.value)}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="address">Street Address *</Label>
+                                <Input
+                                    id="address"
+                                    placeholder="e.g., 123 Nguyen Van Linh"
+                                    value={formData.address}
+                                    onChange={(e) => updateField("address", e.target.value)}
+                                    required
+                                />
+                            </div>
                         </div>
                     </CardContent>
                 </Card>

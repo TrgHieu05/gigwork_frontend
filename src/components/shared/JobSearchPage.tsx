@@ -20,7 +20,7 @@ import {
     Loader2,
 } from "lucide-react";
 import Link from "next/link";
-import { jobsService, Job as ApiJob, JobType } from "@/services/jobs";
+import { jobsService, Job as ApiJob, JobType, getJobLocationString } from "@/services/jobs";
 
 export interface Job {
     id: string;
@@ -58,7 +58,7 @@ function transformApiJob(apiJob: ApiJob): Job {
         id: String(apiJob.id),
         title: apiJob.title,
         company: "Employer", // Would need separate API call
-        location: apiJob.location,
+        location: getJobLocationString(apiJob),
         duration: `${apiJob.durationDays} days`,
         salary: apiJob.salary ? `${apiJob.salary.toLocaleString()} VND` : "Negotiable",
         salaryType: "",
@@ -110,8 +110,8 @@ export function JobSearchPage({ jobs: propJobs }: JobSearchPageProps) {
     const handleSearch = async () => {
         setIsLoading(true);
         try {
-            const filters: { location?: string; type?: JobType } = {};
-            if (locationQuery) filters.location = locationQuery;
+            const filters: { addressContains?: string; type?: JobType } = {};
+            if (locationQuery) filters.addressContains = locationQuery;
             if (selectedCategory !== "All") filters.type = selectedCategory as JobType;
 
             const response = await jobsService.listJobs(filters);

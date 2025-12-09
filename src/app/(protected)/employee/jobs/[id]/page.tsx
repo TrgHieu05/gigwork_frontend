@@ -19,7 +19,7 @@ import {
     CheckCircle,
     DollarSign,
 } from "lucide-react";
-import { jobsService, Job } from "@/services/jobs";
+import { jobsService, Job, getJobLocationString } from "@/services/jobs";
 import { applicationsService } from "@/services/applications";
 import { authService } from "@/services/auth";
 
@@ -201,7 +201,7 @@ export default function EmployeeJobDetailsPage() {
                             <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mt-6">
                                 <div className="flex items-center gap-2">
                                     <MapPin className="h-4 w-4 text-muted-foreground" />
-                                    <span className="text-sm">{job.location}</span>
+                                    <span className="text-sm">{getJobLocationString(job)}</span>
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <Clock className="h-4 w-4 text-muted-foreground" />
@@ -299,7 +299,7 @@ export default function EmployeeJobDetailsPage() {
                             </div>
                             <div className="flex justify-between">
                                 <span className="text-muted-foreground">Location</span>
-                                <span className="font-medium">{job.location}</span>
+                                <span className="font-medium">{getJobLocationString(job)}</span>
                             </div>
                             <div className="flex justify-between">
                                 <span className="text-muted-foreground">Duration</span>

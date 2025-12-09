@@ -22,7 +22,7 @@ import {
   AlertCircle,
   DollarSign,
 } from "lucide-react";
-import { jobsService, Job } from "@/services/jobs";
+import { jobsService, Job, getJobLocationString } from "@/services/jobs";
 import { applicationsService } from "@/services/applications";
 import { profileService } from "@/services/profile";
 
@@ -238,7 +238,7 @@ export default function EmployerJobDetailsPage() {
                     <MapPin className="h-5 w-5 text-muted-foreground" />
                     <div>
                       <p className="text-sm text-muted-foreground">Location</p>
-                      <p className="font-medium">{job.location}</p>
+                      <p className="font-medium">{getJobLocationString(job)}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">

@@ -4,6 +4,15 @@ import api from '@/lib/api';
 export type JobStatus = 'open' | 'full' | 'ongoing' | 'completed';
 export type JobType = 'physical_work' | 'fnb' | 'event' | 'retail' | 'others';
 
+// Job Location structure (matches OpenAPI JobLocation schema)
+export interface JobLocation {
+    jobId?: number;
+    province: string;
+    city: string;
+    ward?: string | null;
+    address: string;
+}
+
 export interface JobApplication {
     id: number;
     workerId: number;
@@ -20,7 +29,10 @@ export interface Job {
     id: number;
     title: string;
     description: string;
-    location: string;
+    locationId?: number | null;
+    locationDetail?: JobLocation;
+    // Keep location for backward compatibility - will be populated by formatJobLocation
+    location?: string;
     startDate: string;
     durationDays: number;
     workerQuota: number;
@@ -42,7 +54,10 @@ export interface JobSession {
 }
 
 export interface JobFilters {
-    location?: string;
+    province?: string;
+    city?: string;
+    ward?: string;
+    addressContains?: string;
     type?: JobType;
     skills?: string;
     date?: string;
@@ -62,12 +77,36 @@ export interface JobListResponse {
 export interface CreateJobData {
     title: string;
     description: string;
-    location: string;
+    location: JobLocation;
     startDate: string;
     durationDays: number;
     workerQuota: number;
     salary?: number;
     type: JobType;
+}
+
+/**
+ * Format JobLocation object to a display string
+ */
+export function formatJobLocation(location?: JobLocation | null): string {
+    if (!location) return 'Unknown Location';
+    const parts = [location.address, location.ward, location.city, location.province].filter(Boolean);
+    return parts.join(', ') || 'Unknown Location';
+}
+
+/**
+ * Get location string from a Job object (handles both old and new format)
+ */
+export function getJobLocationString(job: Job): string {
+    // If locationDetail exists, use it
+    if (job.locationDetail) {
+        return formatJobLocation(job.locationDetail);
+    }
+    // Fallback to location string if available (backward compatibility)
+    if (job.location) {
+        return job.location;
+    }
+    return 'Unknown Location';
 }
 
 export const jobsService = {

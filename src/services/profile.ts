@@ -64,6 +64,12 @@ export interface UserProfile {
         startDate: string;
         workerQuota: number;
     }[];
+    notificationsPreview?: {
+        id: number;
+        title: string;
+        type: string;
+        createdAt: string;
+    }[];
 }
 
 // Image upload response

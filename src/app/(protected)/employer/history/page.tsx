@@ -11,7 +11,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { JobCard, JobCardData, JobStatus } from "@/components/feature/employer/JobCard";
-import { jobsService, Job } from "@/services/jobs";
+import { jobsService, Job, getJobLocationString } from "@/services/jobs";
 import { profileService } from "@/services/profile";
 
 // Types
@@ -48,7 +48,7 @@ function transformApiJob(apiJob: Job): JobCardData {
     id: String(apiJob.id),
     title: apiJob.title,
     status: (apiJob.status as JobStatus) || "open",
-    location: apiJob.location,
+    location: getJobLocationString(apiJob),
     duration: `${apiJob.durationDays} days`,
     salary: apiJob.salary ? `${apiJob.salary.toLocaleString()} VND` : "Negotiable",
     dateRange: `${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}`,

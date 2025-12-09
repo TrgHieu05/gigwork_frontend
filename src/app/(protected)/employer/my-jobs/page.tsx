@@ -6,7 +6,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { JobCard, JobCardData, JobStatus } from "@/components/feature/employer/JobCard";
 import { Plus, Loader2 } from "lucide-react";
 import Link from "next/link";
-import { jobsService, Job } from "@/services/jobs";
+import { jobsService, Job, getJobLocationString } from "@/services/jobs";
 
 // Transform API job to JobCardData format
 function transformApiJob(apiJob: Job): JobCardData {
@@ -26,7 +26,7 @@ function transformApiJob(apiJob: Job): JobCardData {
         id: String(apiJob.id),
         title: apiJob.title,
         status: statusMap[apiJob.status] || "open",
-        location: apiJob.location,
+        location: getJobLocationString(apiJob),
         duration: `${apiJob.durationDays} days`,
         salary: "$15/hr", // Not in API
         dateRange: `${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}`,
@@ -65,7 +65,7 @@ export default function MyJobsPage() {
                         id: String(job.id),
                         title: job.title,
                         status: (job.status as JobStatus) || "open",
-                        location: job.location,
+                        location: getJobLocationString(job),
                         duration: `${job.durationDays} days`,
                         salary: job.salary ? `${job.salary.toLocaleString()} VND` : "Negotiable",
                         dateRange: `${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}`,

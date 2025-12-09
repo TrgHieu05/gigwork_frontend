@@ -16,12 +16,15 @@ export default function CreateJobPage() {
     const [formData, setFormData] = useState({
         title: "",
         description: "",
-        location: "",
+        province: "",
+        city: "",
+        ward: "",
+        address: "",
         salary: "",
         workerQuota: 1,
         startDate: "",
         durationDays: 1,
-        type: "one_time" as JobType,
+        type: "physical_work" as JobType,
     });
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -39,7 +42,12 @@ export default function CreateJobPage() {
             await jobsService.createJob({
                 title: formData.title,
                 description: formData.description,
-                location: formData.location,
+                location: {
+                    province: formData.province,
+                    city: formData.city,
+                    ward: formData.ward || undefined,
+                    address: formData.address,
+                },
                 startDate: formData.startDate,
                 durationDays: formData.durationDays,
                 workerQuota: formData.workerQuota,
@@ -98,30 +106,63 @@ export default function CreateJobPage() {
                             />
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="address">Address *</Label>
+                            <Input
+                                id="address"
+                                name="address"
+                                value={formData.address}
+                                onChange={handleChange}
+                                placeholder="e.g. 123 Nguyen Hue"
+                                required
+                            />
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div className="space-y-2">
-                                <Label htmlFor="location">Location *</Label>
+                                <Label htmlFor="ward">Ward</Label>
                                 <Input
-                                    id="location"
-                                    name="location"
-                                    value={formData.location}
+                                    id="ward"
+                                    name="ward"
+                                    value={formData.ward}
                                     onChange={handleChange}
-                                    placeholder="e.g. Ho Chi Minh City, Vietnam"
+                                    placeholder="e.g. Ben Nghe"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="city">City *</Label>
+                                <Input
+                                    id="city"
+                                    name="city"
+                                    value={formData.city}
+                                    onChange={handleChange}
+                                    placeholder="e.g. District 1"
                                     required
                                 />
                             </div>
-
                             <div className="space-y-2">
-                                <Label htmlFor="salary">Salary (VND)</Label>
+                                <Label htmlFor="province">Province *</Label>
                                 <Input
-                                    id="salary"
-                                    name="salary"
-                                    type="number"
-                                    value={formData.salary}
+                                    id="province"
+                                    name="province"
+                                    value={formData.province}
                                     onChange={handleChange}
-                                    placeholder="e.g. 500000"
+                                    placeholder="e.g. Ho Chi Minh"
+                                    required
                                 />
                             </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="salary">Salary (VND)</Label>
+                            <Input
+                                id="salary"
+                                name="salary"
+                                type="number"
+                                value={formData.salary}
+                                onChange={handleChange}
+                                placeholder="e.g. 500000"
+                            />
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -175,10 +216,11 @@ export default function CreateJobPage() {
                                     className="w-full h-10 px-3 rounded-md border border-input bg-background"
                                     required
                                 >
-                                    <option value="one_time">One Time</option>
-                                    <option value="recurring">Recurring</option>
-                                    <option value="part_time">Part Time</option>
-                                    <option value="full_time">Full Time</option>
+                                    <option value="physical_work">Physical Work</option>
+                                    <option value="fnb">F&B</option>
+                                    <option value="event">Event</option>
+                                    <option value="retail">Retail</option>
+                                    <option value="others">Others</option>
                                 </select>
                             </div>
                         </div>
