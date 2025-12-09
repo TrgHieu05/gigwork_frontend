@@ -49,7 +49,7 @@ const categoryLabels: Record<string, string> = {
 };
 
 // Transform API job to UI job format
-function transformApiJob(apiJob: ApiJob): Job {
+export function transformApiJob(apiJob: ApiJob): Job {
     const startDate = new Date(apiJob.startDate);
     const endDate = new Date(startDate);
     endDate.setDate(endDate.getDate() + apiJob.durationDays);
