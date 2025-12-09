@@ -2,15 +2,30 @@
 
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { ChevronLeft, ArrowUp, ArrowDown } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { ChevronLeft, ArrowUp, ArrowDown, MapPin, Clock, Briefcase } from "lucide-react";
+
+// Job info for calendar display
+interface CalendarJob {
+    id: string | number;
+    title: string;
+    location?: string;
+    startTime?: string;
+    status?: string;
+}
+
+interface DayWithJob {
+    day: number;
+    jobs: CalendarJob[];
+}
 
 interface JobCalendarProps {
-    daysWithJobs?: number[];
+    daysWithJobs?: number[] | DayWithJob[];
 }
 
 export function JobCalendar({ daysWithJobs = [] }: JobCalendarProps) {
     const [currentDate, setCurrentDate] = useState(new Date());
+    const [hoveredDay, setHoveredDay] = useState<number | null>(null);
 
     const monthNames = [
         "Jan", "Feb", "Mar", "Apr", "May", "Jun",
@@ -18,6 +33,23 @@ export function JobCalendar({ daysWithJobs = [] }: JobCalendarProps) {
     ];
 
     const daysOfWeek = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"];
+
+    // Normalize daysWithJobs to always be DayWithJob[] format
+    const normalizedDays: DayWithJob[] = daysWithJobs.map((item) => {
+        if (typeof item === "number") {
+            return { day: item, jobs: [] };
+        }
+        return item;
+    });
+
+    const getJobsForDay = (day: number): CalendarJob[] => {
+        const dayData = normalizedDays.find(d => d.day === day);
+        return dayData?.jobs || [];
+    };
+
+    const hasDayWithJobs = (day: number): boolean => {
+        return normalizedDays.some(d => d.day === day);
+    };
 
     const getDaysInMonth = (date: Date) => {
         const year = date.getFullYear();
@@ -125,7 +157,9 @@ export function JobCalendar({ daysWithJobs = [] }: JobCalendarProps) {
                 {/* Calendar grid */}
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: "4px" }}>
                     {days.map((dayInfo, index) => {
-                        const hasJob = dayInfo.isCurrentMonth && daysWithJobs.includes(dayInfo.day);
+                        const hasJob = dayInfo.isCurrentMonth && hasDayWithJobs(dayInfo.day);
+                        const jobsForDay = dayInfo.isCurrentMonth ? getJobsForDay(dayInfo.day) : [];
+                        const isHovered = hoveredDay === dayInfo.day && dayInfo.isCurrentMonth;
 
                         return (
                             <div
@@ -139,7 +173,7 @@ export function JobCalendar({ daysWithJobs = [] }: JobCalendarProps) {
                                     height: "40px",
                                     fontSize: "14px",
                                     borderRadius: "9999px",
-                                    cursor: dayInfo.isCurrentMonth ? "pointer" : "default",
+                                    cursor: hasJob ? "pointer" : dayInfo.isCurrentMonth ? "default" : "default",
                                     backgroundColor: dayInfo.isToday ? "hsl(var(--primary))" : "transparent",
                                     color: dayInfo.isToday
                                         ? "hsl(var(--primary-foreground))"
@@ -147,6 +181,8 @@ export function JobCalendar({ daysWithJobs = [] }: JobCalendarProps) {
                                             ? "#d1d5db"
                                             : "inherit",
                                 }}
+                                onMouseEnter={() => hasJob && setHoveredDay(dayInfo.day)}
+                                onMouseLeave={() => setHoveredDay(null)}
                             >
                                 {dayInfo.day}
                                 {/* Red dot for days with jobs */}
@@ -161,6 +197,70 @@ export function JobCalendar({ daysWithJobs = [] }: JobCalendarProps) {
                                             backgroundColor: "#ef4444",
                                         }}
                                     />
+                                )}
+
+                                {/* Hover tooltip with job cards */}
+                                {isHovered && jobsForDay.length > 0 && (
+                                    <div
+                                        style={{
+                                            position: "absolute",
+                                            top: "100%",
+                                            left: "50%",
+                                            transform: "translateX(-50%)",
+                                            zIndex: 50,
+                                            marginTop: "8px",
+                                            minWidth: "220px",
+                                            maxWidth: "280px",
+                                        }}
+                                    >
+                                        <div className="bg-white dark:bg-gray-900 border rounded-lg shadow-lg p-3 space-y-2">
+                                            <div className="text-xs font-semibold text-muted-foreground mb-2">
+                                                Jobs on {monthNames[currentDate.getMonth()]} {dayInfo.day}
+                                            </div>
+                                            {jobsForDay.map((job, jobIndex) => (
+                                                <div
+                                                    key={job.id || jobIndex}
+                                                    className="p-2 bg-muted/50 rounded-md space-y-1"
+                                                >
+                                                    <div className="flex items-center gap-2">
+                                                        <Briefcase className="h-3 w-3 text-primary" />
+                                                        <span className="font-medium text-sm truncate">{job.title}</span>
+                                                    </div>
+                                                    {job.location && (
+                                                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                                            <MapPin className="h-3 w-3" />
+                                                            <span className="truncate">{job.location}</span>
+                                                        </div>
+                                                    )}
+                                                    {job.startTime && (
+                                                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                                            <Clock className="h-3 w-3" />
+                                                            <span>{job.startTime}</span>
+                                                        </div>
+                                                    )}
+                                                    {job.status && (
+                                                        <Badge variant="outline" className="text-xs mt-1">
+                                                            {job.status}
+                                                        </Badge>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                        {/* Arrow pointing up */}
+                                        <div
+                                            style={{
+                                                position: "absolute",
+                                                top: "-6px",
+                                                left: "50%",
+                                                transform: "translateX(-50%)",
+                                                width: 0,
+                                                height: 0,
+                                                borderLeft: "6px solid transparent",
+                                                borderRight: "6px solid transparent",
+                                                borderBottom: "6px solid white",
+                                            }}
+                                        />
+                                    </div>
                                 )}
                             </div>
                         );
