@@ -1,8 +1,8 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
-
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import {
@@ -13,31 +13,30 @@ import {
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { authService, getErrorMessage } from "@/services/auth"
 
-// 1. Định nghĩa schema validation bằng Zod cho Employer
+// Schema validation with Zod - simplified for registration only
 const signUpEmployerSchema = z
   .object({
-    orgName: z.string().min(1, "Vui lòng nhập tên tổ chức/doanh nghiệp"),
-    phone: z.string().min(10, "Số điện thoại không hợp lệ"),
-    email: z.string().email("Địa chỉ email không hợp lệ"),
-    password: z.string().min(8, "Mật khẩu phải có ít nhất 8 ký tự"),
+    email: z.string().email("Invalid email address"),
+    password: z.string().min(8, "Password must be at least 8 characters"),
     confirmPassword: z.string(),
     terms: z.boolean().refine((val) => val === true, {
-      message: "Bạn phải đồng ý với điều khoản sử dụng",
+      message: "You must agree to the terms of service",
     }),
   })
   .refine((data) => data.password === data.confirmPassword, {
-    message: "Mật khẩu nhập lại không khớp",
+    message: "Passwords do not match",
     path: ["confirmPassword"],
   })
 
-// 2. Định nghĩa kiểu dữ liệu từ schema
 type SignUpEmployerValues = z.infer<typeof signUpEmployerSchema>
 
 export function SignUpFormEmployer() {
+  const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  // 3. Khởi tạo form hook
   const {
     register,
     handleSubmit,
@@ -45,8 +44,6 @@ export function SignUpFormEmployer() {
   } = useForm<SignUpEmployerValues>({
     resolver: zodResolver(signUpEmployerSchema),
     defaultValues: {
-      orgName: "",
-      phone: "",
       email: "",
       password: "",
       confirmPassword: "",
@@ -54,34 +51,23 @@ export function SignUpFormEmployer() {
     },
   })
 
-  // 4. Hàm xử lý khi submit form (Kết nối Backend)
   const onSubmit = async (data: SignUpEmployerValues) => {
     setIsLoading(true)
+    setError(null)
+
     try {
-      // Gọi API backend ở đây
-      const response = await fetch("http://localhost:8080/api/v1/auth/signup/employer", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          orgName: data.orgName,
-          phone: data.phone,
-          email: data.email,
-          password: data.password,
-        }),
+      // Call API with isEmployer=true for employer role
+      await authService.register({
+        email: data.email,
+        password: data.password,
+        isWorker: false,
+        isEmployer: true,
       })
 
-      if (!response.ok) {
-        throw new Error("Đăng ký thất bại")
-      }
-
-      const result = await response.json()
-      console.log("Đăng ký thành công:", result)
-      // Chuyển hướng hoặc thông báo thành công
-    } catch (error) {
-      console.error("Lỗi:", error)
-      // Hiển thị thông báo lỗi cho người dùng
+      // Redirect to setup profile page
+      router.push("/setup-profile")
+    } catch (err) {
+      setError(getErrorMessage(err))
     } finally {
       setIsLoading(false)
     }
@@ -90,45 +76,23 @@ export function SignUpFormEmployer() {
   return (
     <form
       onSubmit={handleSubmit(onSubmit)}
-      className="relative flex flex-col items-startp-8 w-full h-full gap-8"
+      className="relative flex flex-col items-start w-full h-full gap-8"
     >
+      {/* Error message */}
+      {error && (
+        <div className="w-full p-3 bg-red-50 border border-red-200 rounded-md">
+          <p className="text-red-600 text-sm">{error}</p>
+        </div>
+      )}
+
       <FieldGroup className="z-20 w-full">
-        <Field>
-          <FieldLabel htmlFor="orgName">Organization / business name</FieldLabel>
-          <FieldContent>
-            <Input
-              id="orgName"
-              placeholder="Placeholder"
-              {...register("orgName")}
-            />
-            {errors.orgName && (
-              <p className="text-red-500 text-sm mt-1">{errors.orgName.message}</p>
-            )}
-          </FieldContent>
-        </Field>
-
-        <Field>
-          <FieldLabel htmlFor="phone">Phone number</FieldLabel>
-          <FieldContent>
-            <Input
-              id="phone"
-              type="tel"
-              placeholder="Placeholder"
-              {...register("phone")}
-            />
-            {errors.phone && (
-              <p className="text-red-500 text-sm mt-1">{errors.phone.message}</p>
-            )}
-          </FieldContent>
-        </Field>
-
         <Field>
           <FieldLabel htmlFor="email">Email address</FieldLabel>
           <FieldContent>
             <Input
               id="email"
               type="email"
-              placeholder="Placeholder"
+              placeholder="Enter email address"
               {...register("email")}
             />
             {errors.email && (
@@ -178,7 +142,7 @@ export function SignUpFormEmployer() {
             className="inline-flex items-center justify-center rounded-[4px] border-2 border-[#e0e0e0] size-4"
             {...register("terms")}
           />
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <p className="text-base text-[#21212c]">
               By signing up, you agree to our
             </p>
@@ -200,7 +164,7 @@ export function SignUpFormEmployer() {
         <Button
           type="submit"
           variant="default"
-          className="h-12 rounded-md px-6 w-[608px]"
+          className="h-12 rounded-md px-6 w-full"
           disabled={isLoading}
         >
           {isLoading ? "Creating Account..." : "Create Account"}
@@ -209,4 +173,3 @@ export function SignUpFormEmployer() {
     </form>
   )
 }
-

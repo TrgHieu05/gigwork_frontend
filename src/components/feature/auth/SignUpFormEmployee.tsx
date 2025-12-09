@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
@@ -12,30 +13,30 @@ import {
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { authService, getErrorMessage } from "@/services/auth"
 
-// 1. Định nghĩa schema validation bằng Zod
+// Schema validation with Zod - simplified for registration only
 const signUpEmployeeSchema = z
   .object({
-    fullName: z.string().min(1, "Vui lòng nhập họ và tên"),
-    email: z.string().email("Địa chỉ email không hợp lệ"),
-    password: z.string().min(8, "Mật khẩu phải có ít nhất 8 ký tự"),
+    email: z.string().email("Invalid email address"),
+    password: z.string().min(8, "Password must be at least 8 characters"),
     confirmPassword: z.string(),
     terms: z.boolean().refine((val) => val === true, {
-      message: "Bạn phải đồng ý với điều khoản sử dụng",
+      message: "You must agree to the terms of service",
     }),
   })
   .refine((data) => data.password === data.confirmPassword, {
-    message: "Mật khẩu nhập lại không khớp",
+    message: "Passwords do not match",
     path: ["confirmPassword"],
   })
 
-// 2. Định nghĩa kiểu dữ liệu từ schema
 type SignUpEmployeeValues = z.infer<typeof signUpEmployeeSchema>
 
 export function SignUpFormEmployee() {
+  const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  // 3. Khởi tạo form hook
   const {
     register,
     handleSubmit,
@@ -43,7 +44,6 @@ export function SignUpFormEmployee() {
   } = useForm<SignUpEmployeeValues>({
     resolver: zodResolver(signUpEmployeeSchema),
     defaultValues: {
-      fullName: "",
       email: "",
       password: "",
       confirmPassword: "",
@@ -51,34 +51,23 @@ export function SignUpFormEmployee() {
     },
   })
 
-  // 4. Hàm xử lý khi submit form (Kết nối Backend)
   const onSubmit = async (data: SignUpEmployeeValues) => {
     setIsLoading(true)
+    setError(null)
+
     try {
-      // Gọi API backend ở đây
-      const response = await fetch("http://localhost:8080/api/v1/auth/signup/employee", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          fullName: data.fullName,
-          email: data.email,
-          password: data.password,
-          // Không gửi confirmPassword và terms lên server nếu không cần thiết
-        }),
+      // Call API with isWorker=true for employee role
+      await authService.register({
+        email: data.email,
+        password: data.password,
+        isWorker: true,
+        isEmployer: false,
       })
 
-      if (!response.ok) {
-        throw new Error("Đăng ký thất bại")
-      }
-
-      const result = await response.json()
-      console.log("Đăng ký thành công:", result)
-      // Chuyển hướng hoặc thông báo thành công
-    } catch (error) {
-      console.error("Lỗi:", error)
-      // Hiển thị thông báo lỗi cho người dùng
+      // Redirect to setup profile page
+      router.push("/setup-profile")
+    } catch (err) {
+      setError(getErrorMessage(err))
     } finally {
       setIsLoading(false)
     }
@@ -89,21 +78,14 @@ export function SignUpFormEmployee() {
       onSubmit={handleSubmit(onSubmit)}
       className="flex flex-col items-start w-full h-fit gap-8"
     >
-      <FieldGroup className="w-full">
-        <Field>
-          <FieldLabel htmlFor="fullName">Full name</FieldLabel>
-          <FieldContent>
-            <Input
-              id="fullName"
-              placeholder="Full name"
-              {...register("fullName")}
-            />
-            {errors.fullName && (
-              <p className="text-red-500 text-sm mt-1">{errors.fullName.message}</p>
-            )}
-          </FieldContent>
-        </Field>
+      {/* Error message */}
+      {error && (
+        <div className="w-full p-3 bg-red-50 border border-red-200 rounded-md">
+          <p className="text-red-600 text-sm">{error}</p>
+        </div>
+      )}
 
+      <FieldGroup className="w-full">
         <Field>
           <FieldLabel htmlFor="email">Email address</FieldLabel>
           <FieldContent>
@@ -160,7 +142,7 @@ export function SignUpFormEmployee() {
             className="inline-flex items-center justify-center rounded-[8px] border-4 border-primary/80 size-4"
             {...register("terms")}
           />
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <p className="text-base text-[#21212c]">
               By signing up, you agree to our
             </p>
