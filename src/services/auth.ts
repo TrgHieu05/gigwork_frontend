@@ -81,6 +81,14 @@ export const authService = {
     },
 
     /**
+     * Verify email with token
+     * GET /api/auth/verify-email
+     */
+    async verifyEmail(token: string): Promise<void> {
+        await api.get(`/api/auth/verify-email?token=${token}`);
+    },
+
+    /**
      * Get current user from localStorage
      */
     getCurrentUser(): AuthPayload['user'] | null {

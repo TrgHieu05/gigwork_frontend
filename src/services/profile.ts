@@ -1,4 +1,5 @@
 import api from '@/lib/api';
+import { JobLocation } from './jobs';
 
 // Employee profile types
 export interface EmployeeProfile {
@@ -60,14 +61,11 @@ export interface UserProfile {
     recentJobs?: {
         id: number;
         title: string;
-        // location field removed as it is not in the backend model
-        // We might want to add structured location fields if backend provides them
-        // For now, we make it optional or compatible with what might come back
-        province?: string;
-        city?: string;
-        address?: string;
         startDate: string;
         workerQuota: number;
+        salary: number;
+        locationRef?: JobLocation;
+        status: string;
     }[];
     notificationsPreview?: {
         id: number;

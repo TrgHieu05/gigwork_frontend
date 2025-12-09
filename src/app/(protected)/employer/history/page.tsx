@@ -14,6 +14,8 @@ import { JobCard, JobCardData, JobStatus } from "@/components/feature/employer/J
 import { jobsService, Job, getJobLocationString } from "@/services/jobs";
 import { profileService } from "@/services/profile";
 
+import { authService } from "@/services/auth";
+
 // Types
 type ApplicationHistoryStatus = "pending" | "accepted" | "rejected" | "completed";
 
@@ -72,31 +74,41 @@ export default function HistoryPage() {
     const fetchData = async () => {
       setIsLoading(true);
       try {
+        const currentUser = authService.getCurrentUser();
+        if (!currentUser) return;
+
         // Fetch jobs from API
         const jobsResponse = await jobsService.listJobs();
-        const transformedJobs = jobsResponse.items.map(transformApiJob);
+        // Filter jobs by current employer
+        const myJobs = jobsResponse.items.filter(job => job.employerId === currentUser.id);
+        const transformedJobs = myJobs.map(transformApiJob);
         setJobs(transformedJobs);
 
-        // Get user profile with applications data
-        const profile = await profileService.getCurrentUser();
+        // Derive applications from jobs
+        const allApplications: ApplicationHistory[] = [];
+        
+        myJobs.forEach(job => {
+          if (job.applications) {
+            job.applications.forEach(app => {
+              allApplications.push({
+                id: String(app.id),
+                applicantName: app.worker?.name || "Candidate",
+                applicantAvatar: undefined, // Not available in JobApplication
+                jobTitle: job.title,
+                appliedDate: app.createdAt ? new Date(app.createdAt).toLocaleDateString() : "Recently",
+                status: app.status as ApplicationHistoryStatus,
+                salary: job.salary,
+              });
+            });
+          }
+        });
 
-        // Transform applications from profile
-        if (profile.recentApplications) {
-          const apps: ApplicationHistory[] = profile.recentApplications.map((app) => ({
-            id: String(app.applicationId),
-            applicantName: "Candidate", // Name not available in simplified profile view
-            jobTitle: app.jobTitle || "Unknown Job",
-            appliedDate: app.appliedAt ? new Date(app.appliedAt).toLocaleDateString() : "Recently",
-            status: app.status as ApplicationHistoryStatus,
-            salary: undefined, // Salary not available in simplified profile view
-          }));
+        setApplications(allApplications);
 
-          setApplications(apps);
+        // Filter hired employees (accepted or completed applications)
+        const hired = allApplications.filter(a => a.status === "accepted" || a.status === "completed");
+        setHiredEmployees(hired);
 
-          // Filter hired employees (accepted or completed applications)
-          const hired = apps.filter(a => a.status === "accepted" || a.status === "completed");
-          setHiredEmployees(hired);
-        }
       } catch (error) {
         console.error("Error fetching history data:", error);
       } finally {
