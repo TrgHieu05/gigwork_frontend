@@ -25,13 +25,7 @@ export default function EmployeeHistoryPage() {
 
                 // Transform applications from profile
                 if (profile.recentApplications) {
-                    const apps: EmployeeApplication[] = profile.recentApplications.map((app: {
-                        id: number;
-                        status: string;
-                        job?: { title: string; salary?: number };
-                        employer?: { companyName?: string };
-                        createdAt?: string
-                    }) => {
+                    const apps: EmployeeApplication[] = profile.recentApplications.map((app) => {
                         // Map API status to component status
                         const statusMap: Record<string, EmployeeApplication['status']> = {
                             pending: "Pending",
@@ -42,10 +36,10 @@ export default function EmployeeHistoryPage() {
                         };
 
                         return {
-                            id: String(app.id),
-                            title: app.job?.title || "Unknown Job",
-                            company: app.employer?.companyName || "Unknown Company",
-                            time: app.createdAt ? new Date(app.createdAt).toLocaleDateString() : "Recently",
+                            id: String(app.applicationId),
+                            title: app.jobTitle || "Unknown Job",
+                            company: "Unknown Company", // API doesn't return employer info in recentApplications
+                            time: app.appliedAt ? new Date(app.appliedAt).toLocaleDateString() : "Recently",
                             status: statusMap[app.status] || "Pending",
                         };
                     });
@@ -54,21 +48,16 @@ export default function EmployeeHistoryPage() {
 
                     // Filter completed jobs from applications
                     const completed: EmployeeJob[] = profile.recentApplications
-                        .filter((app: { status: string }) => app.status === "completed")
-                        .map((app: {
-                            id: number;
-                            job?: { title: string; salary?: number; durationDays?: number; location?: string };
-                            employer?: { companyName?: string };
-                            createdAt?: string
-                        }) => ({
-                            id: String(app.id),
-                            title: app.job?.title || "Unknown Job",
-                            company: app.employer?.companyName || "Unknown Company",
-                            location: app.job?.location || "Unknown Location",
-                            completedDate: app.createdAt ? new Date(app.createdAt).toLocaleDateString() : "Recently",
-                            duration: app.job?.durationDays ? `${app.job.durationDays} days` : "N/A",
-                            earned: app.job?.salary ? `${app.job.salary.toLocaleString()} VND` : "N/A",
-                            rating: 0, // Would need separate review API
+                        .filter((app) => app.status === "completed")
+                        .map((app) => ({
+                            id: String(app.applicationId),
+                            title: app.jobTitle || "Unknown Job",
+                            company: "Unknown Company",
+                            location: "Unknown Location",
+                            completedDate: app.appliedAt ? new Date(app.appliedAt).toLocaleDateString() : "Recently",
+                            duration: "N/A",
+                            earned: "N/A",
+                            rating: 0,
                         }));
 
                     setCompletedJobs(completed);
@@ -135,7 +124,7 @@ export default function EmployeeHistoryPage() {
                             <Button
                                 key={filter}
                                 variant={applicationFilter === filter ? "default" : "outline"}
-                                size="sm"
+                                size="small"
                                 onClick={() => setApplicationFilter(filter)}
                             >
                                 {filter.charAt(0).toUpperCase() + filter.slice(1)}

@@ -82,13 +82,13 @@ export default function HistoryPage() {
 
         // Transform applications from profile
         if (profile.recentApplications) {
-          const apps: ApplicationHistory[] = profile.recentApplications.map((app: { id: number; status: string; job?: { title: string; salary?: number }; worker?: { name: string }; createdAt?: string }) => ({
-            id: String(app.id),
-            applicantName: app.worker?.name || "Unknown",
-            jobTitle: app.job?.title || "Unknown Job",
-            appliedDate: app.createdAt ? new Date(app.createdAt).toLocaleDateString() : "Recently",
+          const apps: ApplicationHistory[] = profile.recentApplications.map((app) => ({
+            id: String(app.applicationId),
+            applicantName: "Candidate", // Name not available in simplified profile view
+            jobTitle: app.jobTitle || "Unknown Job",
+            appliedDate: app.appliedAt ? new Date(app.appliedAt).toLocaleDateString() : "Recently",
             status: app.status as ApplicationHistoryStatus,
-            salary: app.job?.salary,
+            salary: undefined, // Salary not available in simplified profile view
           }));
 
           setApplications(apps);

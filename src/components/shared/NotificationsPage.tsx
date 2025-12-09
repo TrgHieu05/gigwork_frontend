@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -18,7 +18,7 @@ import {
     Trash2,
     Loader2,
 } from "lucide-react";
-import { notificationsService } from "@/services/notifications";
+import { useNotifications } from "@/hooks/useNotifications";
 
 type NotificationType = "application" | "job" | "message" | "system";
 
@@ -90,47 +90,44 @@ function transformApiNotification(apiNotification: {
 export function NotificationsPage() {
     const { isEmployee } = useRole();
     const [activeTab, setActiveTab] = useState("all");
-    const [notifications, setNotifications] = useState<Notification[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
 
-    useEffect(() => {
-        const fetchNotifications = async () => {
-            setIsLoading(true);
-            try {
-                const response = await notificationsService.getNotifications();
-                const transformedNotifications = response.map(transformApiNotification);
-                setNotifications(transformedNotifications);
-            } catch (error) {
-                console.error("Error fetching notifications:", error);
-                setNotifications([]);
-            } finally {
-                setIsLoading(false);
-            }
-        };
+    // Use SWR hook for cached notifications
+    const { notifications: apiNotifications, isLoading } = useNotifications();
 
-        fetchNotifications();
-    }, []);
+    // Local state for tracking local modifications (read/deleted)
+    const [readIds, setReadIds] = useState<Set<string>>(new Set());
+    const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set());
 
-    const unreadCount = notifications.filter(n => !n.isRead).length;
+    // Transform and memoize notifications with local state applied
+    const notifications = useMemo(() => {
+        return apiNotifications
+            .map(transformApiNotification)
+            .filter((n: Notification) => !deletedIds.has(n.id))
+            .map((n: Notification) => ({
+                ...n,
+                isRead: n.isRead || readIds.has(n.id)
+            }));
+    }, [apiNotifications, readIds, deletedIds]);
+
+    const unreadCount = notifications.filter((n: Notification) => !n.isRead).length;
 
     const filteredNotifications = activeTab === "all"
         ? notifications
         : activeTab === "unread"
-            ? notifications.filter(n => !n.isRead)
-            : notifications.filter(n => n.type === activeTab);
+            ? notifications.filter((n: Notification) => !n.isRead)
+            : notifications.filter((n: Notification) => n.type === activeTab);
 
     const markAsRead = (id: string) => {
-        setNotifications(prev => prev.map(n =>
-            n.id === id ? { ...n, isRead: true } : n
-        ));
+        setReadIds(prev => new Set(prev).add(id));
     };
 
     const markAllAsRead = () => {
-        setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+        const allIds = new Set(notifications.map((n: Notification) => n.id));
+        setReadIds(allIds);
     };
 
     const deleteNotification = (id: string) => {
-        setNotifications(prev => prev.filter(n => n.id !== id));
+        setDeletedIds(prev => new Set(prev).add(id));
     };
 
     if (isLoading) {
