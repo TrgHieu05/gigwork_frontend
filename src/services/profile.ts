@@ -50,6 +50,20 @@ export interface UserProfile {
         open: number;
     } | null;
     unreadNotifications?: number;
+    recentApplications?: {
+        applicationId: number;
+        jobId?: number;
+        jobTitle?: string;
+        status: string;
+        appliedAt: string;
+    }[];
+    recentJobs?: {
+        id: number;
+        title: string;
+        location: string;
+        startDate: string;
+        workerQuota: number;
+    }[];
 }
 
 // Image upload response

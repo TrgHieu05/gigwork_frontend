@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -17,8 +17,10 @@ import {
     ChevronDown,
     Heart,
     Building,
+    Loader2,
 } from "lucide-react";
 import Link from "next/link";
+import { jobsService, Job as ApiJob, JobType } from "@/services/jobs";
 
 export interface Job {
     id: string;
@@ -36,108 +38,97 @@ export interface Job {
     isUrgent?: boolean;
 }
 
-const mockJobs: Job[] = [
-    {
-        id: "1",
-        title: "Warehouse Associate",
-        company: "FastShip Logistics",
-        location: "Chicago, IL",
-        duration: "5 days",
-        salary: "$18",
-        salaryType: "per hour",
-        dateRange: "Dec 15 - Dec 20",
-        postedDate: "2 hours ago",
-        category: "Warehouse",
-        description: "Help with inventory management and order fulfillment in our Chicago warehouse.",
-        isUrgent: true,
-    },
-    {
-        id: "2",
-        title: "Retail Sales Associate",
-        company: "TrendMart",
-        location: "New York, NY",
-        duration: "1 week",
-        salary: "$19",
-        salaryType: "per hour",
-        dateRange: "Dec 18 - Dec 25",
-        postedDate: "5 hours ago",
-        category: "Retail",
-        description: "Assist customers during our holiday sale event.",
-    },
-    {
-        id: "3",
-        title: "Event Staff",
-        company: "Premier Events Co.",
-        location: "Los Angeles, CA",
-        duration: "3 days",
-        salary: "$22",
-        salaryType: "per hour",
-        dateRange: "Dec 20 - Dec 22",
-        postedDate: "1 day ago",
-        category: "Events",
-        description: "Work at an exclusive corporate holiday party.",
-        isUrgent: true,
-    },
-    {
-        id: "4",
-        title: "Delivery Driver",
-        company: "QuickDeliver",
-        location: "Miami, FL",
-        duration: "2 weeks",
-        salary: "$20",
-        salaryType: "per hour",
-        dateRange: "Dec 10 - Dec 24",
-        postedDate: "1 day ago",
-        category: "Delivery",
-        description: "Deliver packages during the busy holiday season.",
-    },
-    {
-        id: "5",
-        title: "Restaurant Server",
-        company: "The Grand Bistro",
-        location: "San Francisco, CA",
-        duration: "Weekend",
-        salary: "$15 + tips",
-        salaryType: "per hour",
-        dateRange: "Dec 14 - Dec 15",
-        postedDate: "2 days ago",
-        category: "Food & Beverage",
-        description: "Serve guests at our upscale restaurant.",
-    },
-    {
-        id: "6",
-        title: "Construction Helper",
-        company: "BuildRight Inc.",
-        location: "Houston, TX",
-        duration: "1 week",
-        salary: "$17",
-        salaryType: "per hour",
-        dateRange: "Dec 16 - Dec 22",
-        postedDate: "3 days ago",
-        category: "Construction",
-        description: "Assist with general construction tasks on our commercial project.",
-    },
-];
+const categories = ["All", "physical_work", "fnb", "event", "retail", "others"];
+const categoryLabels: Record<string, string> = {
+    "All": "All",
+    "physical_work": "Physical Work",
+    "fnb": "Food & Beverage",
+    "event": "Events",
+    "retail": "Retail",
+    "others": "Others",
+};
 
-const categories = ["All", "Warehouse", "Retail", "Events", "Delivery", "Food & Beverage", "Construction"];
+// Transform API job to UI job format
+function transformApiJob(apiJob: ApiJob): Job {
+    const startDate = new Date(apiJob.startDate);
+    const endDate = new Date(startDate);
+    endDate.setDate(endDate.getDate() + apiJob.durationDays);
+
+    return {
+        id: String(apiJob.id),
+        title: apiJob.title,
+        company: "Employer", // Would need separate API call
+        location: apiJob.location,
+        duration: `${apiJob.durationDays} days`,
+        salary: apiJob.salary ? `${apiJob.salary.toLocaleString()} VND` : "Negotiable",
+        salaryType: "",
+        dateRange: `${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}`,
+        postedDate: apiJob.createdAt ? new Date(apiJob.createdAt).toLocaleDateString() : "Recently",
+        category: apiJob.type,
+        description: apiJob.description,
+        isUrgent: apiJob.status === "open" && apiJob.workerQuota > 5,
+    };
+}
 
 interface JobSearchPageProps {
     jobs?: Job[];
 }
 
-export function JobSearchPage({ jobs = mockJobs }: JobSearchPageProps) {
-    const { role, basePath, isEmployee } = useRole();
+export function JobSearchPage({ jobs: propJobs }: JobSearchPageProps) {
+    const { basePath, isEmployee } = useRole();
     const [searchQuery, setSearchQuery] = useState("");
     const [locationQuery, setLocationQuery] = useState("");
     const [selectedCategory, setSelectedCategory] = useState("All");
     const [savedJobs, setSavedJobs] = useState<string[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [jobs, setJobs] = useState<Job[]>([]);
+
+    useEffect(() => {
+        const fetchJobs = async () => {
+            if (propJobs) {
+                setJobs(propJobs);
+                setIsLoading(false);
+                return;
+            }
+
+            setIsLoading(true);
+            try {
+                const response = await jobsService.listJobs();
+                const transformedJobs = response.items.map(transformApiJob);
+                setJobs(transformedJobs);
+            } catch (error) {
+                console.error("Error fetching jobs:", error);
+                setJobs([]);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchJobs();
+    }, [propJobs]);
+
+    const handleSearch = async () => {
+        setIsLoading(true);
+        try {
+            const filters: { location?: string; type?: JobType } = {};
+            if (locationQuery) filters.location = locationQuery;
+            if (selectedCategory !== "All") filters.type = selectedCategory as JobType;
+
+            const response = await jobsService.listJobs(filters);
+            const transformedJobs = response.items.map(transformApiJob);
+            setJobs(transformedJobs);
+        } catch (error) {
+            console.error("Error searching jobs:", error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     const filteredJobs = jobs.filter(job => {
         const matchesSearch = job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
             job.company.toLowerCase().includes(searchQuery.toLowerCase());
-        const matchesLocation = job.location.toLowerCase().includes(locationQuery.toLowerCase());
         const matchesCategory = selectedCategory === "All" || job.category === selectedCategory;
-        return matchesSearch && matchesLocation && matchesCategory;
+        return matchesSearch && matchesCategory;
     });
 
     const toggleSaveJob = (jobId: string) => {
@@ -147,6 +138,14 @@ export function JobSearchPage({ jobs = mockJobs }: JobSearchPageProps) {
                 : [...prev, jobId]
         );
     };
+
+    if (isLoading) {
+        return (
+            <div className="h-full flex items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+        );
+    }
 
     return (
         <div className="h-full p-6 space-y-6 overflow-auto">
@@ -183,7 +182,7 @@ export function JobSearchPage({ jobs = mockJobs }: JobSearchPageProps) {
                                 className="pl-10"
                             />
                         </div>
-                        <Button>
+                        <Button onClick={handleSearch}>
                             <Search className="h-4 w-4 mr-2" />
                             Search
                         </Button>
@@ -203,7 +202,7 @@ export function JobSearchPage({ jobs = mockJobs }: JobSearchPageProps) {
                             : "bg-muted hover:bg-muted/80"
                             }`}
                     >
-                        {category}
+                        {categoryLabels[category] || category}
                     </button>
                 ))}
             </div>

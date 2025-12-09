@@ -136,6 +136,9 @@
           "workerQuota": {
             "type": "integer"
           },
+          "salary": {
+            "type": "integer"
+          },
           "status": {
             "type": "string",
             "enum": [

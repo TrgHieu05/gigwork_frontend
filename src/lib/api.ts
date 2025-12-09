@@ -30,6 +30,16 @@ api.interceptors.request.use(
 api.interceptors.response.use(
     (response) => response,
     (error: AxiosError) => {
+        // Handle timeout errors
+        if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+            console.error('API Timeout: Backend server is not responding. Please check if the backend is running on', api.defaults.baseURL);
+        }
+
+        // Handle network errors (backend not running)
+        if (error.code === 'ERR_NETWORK' || error.message === 'Network Error') {
+            console.error('Network Error: Cannot connect to backend server at', api.defaults.baseURL);
+        }
+
         // Handle 401 - redirect to login
         if (error.response?.status === 401) {
             if (typeof window !== 'undefined') {

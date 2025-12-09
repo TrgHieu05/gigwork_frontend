@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -16,7 +16,9 @@ import {
     Clock,
     Check,
     Trash2,
+    Loader2,
 } from "lucide-react";
+import { notificationsService } from "@/services/notifications";
 
 type NotificationType = "application" | "job" | "message" | "system";
 
@@ -30,10 +32,6 @@ interface Notification {
     link?: string;
 }
 
-interface NotificationsPageProps {
-    notifications?: Notification[];
-}
-
 const notificationTypeConfig: Record<NotificationType, { icon: React.ElementType; color: string; bg: string }> = {
     application: { icon: Users, color: "text-blue-600", bg: "bg-blue-100" },
     job: { icon: Briefcase, color: "text-green-600", bg: "bg-green-100" },
@@ -41,53 +39,77 @@ const notificationTypeConfig: Record<NotificationType, { icon: React.ElementType
     system: { icon: AlertCircle, color: "text-orange-600", bg: "bg-orange-100" },
 };
 
-const defaultNotifications: Notification[] = [
-    {
-        id: "1",
-        type: "application",
-        title: "New Application",
-        message: "John Smith applied for Warehouse Associate position",
-        time: "5 minutes ago",
-        isRead: false,
-    },
-    {
-        id: "2",
-        type: "application",
-        title: "New Application",
-        message: "Emily Johnson applied for Retail Sales Associate position",
-        time: "1 hour ago",
-        isRead: false,
-    },
-    {
-        id: "3",
-        type: "job",
-        title: "Job Expired",
-        message: "Your job posting 'Event Staff' has expired",
-        time: "2 hours ago",
-        isRead: true,
-    },
-    {
-        id: "4",
-        type: "message",
-        title: "New Message",
-        message: "Michael Brown sent you a message",
-        time: "3 hours ago",
-        isRead: false,
-    },
-    {
-        id: "5",
-        type: "system",
-        title: "Profile Updated",
-        message: "Your profile has been successfully updated",
-        time: "1 day ago",
-        isRead: true,
-    },
-];
+// Transform API notification to component format
+function transformApiNotification(apiNotification: {
+    id: number;
+    type?: string;
+    title?: string;
+    message?: string;
+    createdAt?: string;
+    isRead?: boolean;
+}): Notification {
+    // Map API types to our types
+    const typeMap: Record<string, NotificationType> = {
+        application: "application",
+        job: "job",
+        message: "message",
+        system: "system",
+    };
 
-export function NotificationsPage({ notifications: initialNotifications = defaultNotifications }: NotificationsPageProps) {
+    const type = typeMap[apiNotification.type || ""] || "system";
+
+    // Format time
+    let time = "Recently";
+    if (apiNotification.createdAt) {
+        const date = new Date(apiNotification.createdAt);
+        const now = new Date();
+        const diffMs = now.getTime() - date.getTime();
+        const diffMins = Math.floor(diffMs / 60000);
+        const diffHours = Math.floor(diffMs / 3600000);
+        const diffDays = Math.floor(diffMs / 86400000);
+
+        if (diffMins < 60) {
+            time = diffMins <= 1 ? "Just now" : `${diffMins} minutes ago`;
+        } else if (diffHours < 24) {
+            time = diffHours === 1 ? "1 hour ago" : `${diffHours} hours ago`;
+        } else {
+            time = diffDays === 1 ? "1 day ago" : `${diffDays} days ago`;
+        }
+    }
+
+    return {
+        id: String(apiNotification.id),
+        type,
+        title: apiNotification.title || "Notification",
+        message: apiNotification.message || "",
+        time,
+        isRead: apiNotification.isRead || false,
+    };
+}
+
+export function NotificationsPage() {
     const { isEmployee } = useRole();
     const [activeTab, setActiveTab] = useState("all");
-    const [notifications, setNotifications] = useState(initialNotifications);
+    const [notifications, setNotifications] = useState<Notification[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchNotifications = async () => {
+            setIsLoading(true);
+            try {
+                const response = await notificationsService.getNotifications();
+                const transformedNotifications = response.map(transformApiNotification);
+                setNotifications(transformedNotifications);
+            } catch (error) {
+                console.error("Error fetching notifications:", error);
+                setNotifications([]);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchNotifications();
+    }, []);
 
     const unreadCount = notifications.filter(n => !n.isRead).length;
 
@@ -110,6 +132,14 @@ export function NotificationsPage({ notifications: initialNotifications = defaul
     const deleteNotification = (id: string) => {
         setNotifications(prev => prev.filter(n => n.id !== id));
     };
+
+    if (isLoading) {
+        return (
+            <div className="h-full flex items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+        );
+    }
 
     return (
         <div className="h-full p-6 space-y-6 overflow-auto">

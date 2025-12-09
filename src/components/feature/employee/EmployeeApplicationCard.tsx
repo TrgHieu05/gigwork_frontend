@@ -7,7 +7,7 @@ export interface EmployeeApplication {
     title: string;
     company: string;
     time: string; // e.g., "2 days ago" or "05/12/2025"
-    status: "Pending" | "Accepted" | "Rejected";
+    status: "Pending" | "Accepted" | "Rejected" | "Completed" | "Cancelled";
 }
 
 interface EmployeeApplicationCardProps {
@@ -19,12 +19,16 @@ const statusColors: Record<string, string> = {
     Pending: "bg-yellow-100 text-yellow-700",
     Accepted: "bg-green-100 text-green-700",
     Rejected: "bg-red-100 text-red-700",
+    Completed: "bg-blue-100 text-blue-700",
+    Cancelled: "bg-gray-100 text-gray-700",
 };
 
 const statusIcons: Record<string, string> = {
     Pending: "↻",
     Accepted: "✓",
     Rejected: "✗",
+    Completed: "★",
+    Cancelled: "○",
 };
 
 export function EmployeeApplicationCard({ application, variant = "compact" }: EmployeeApplicationCardProps) {

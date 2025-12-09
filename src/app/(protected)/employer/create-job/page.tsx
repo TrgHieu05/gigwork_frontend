@@ -8,95 +8,108 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import {
     ArrowLeft,
     Briefcase,
-    Clock,
     MapPin,
     FileText,
-    Plus,
-    X,
+    Loader2,
+    Users,
+    Calendar,
 } from "lucide-react";
+import { jobsService, JobType } from "@/services/jobs";
+
+// Job types matching API enum
+const jobTypes: { value: JobType; label: string }[] = [
+    { value: "physical_work", label: "Physical Work" },
+    { value: "fnb", label: "Food & Beverage" },
+    { value: "event", label: "Event" },
+    { value: "retail", label: "Retail" },
+    { value: "others", label: "Others" },
+];
 
 interface JobFormData {
     title: string;
-    category: string;
-    positions: number;
-    startDate: string;
-    endDate: string;
-    duration: string;
-    workSchedule: string;
-    location: string;
-    address: string;
-    salary: string;
-    salaryType: string;
     description: string;
-    requirements: string[];
-    benefits: string[];
+    location: string;
+    startDate: string;
+    durationDays: number;
+    workerQuota: number;
+    salary: number;
+    type: JobType;
 }
 
 export default function CreateJobPage() {
     const router = useRouter();
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [error, setError] = useState<string | null>(null);
     const [formData, setFormData] = useState<JobFormData>({
         title: "",
-        category: "",
-        positions: 1,
-        startDate: "",
-        endDate: "",
-        duration: "",
-        workSchedule: "",
-        location: "",
-        address: "",
-        salary: "",
-        salaryType: "hourly",
         description: "",
-        requirements: [""],
-        benefits: [""],
+        location: "",
+        startDate: "",
+        durationDays: 1,
+        workerQuota: 1,
+        salary: 0,
+        type: "physical_work",
     });
 
-    const updateField = (field: keyof JobFormData, value: string | number | string[]) => {
+    const updateField = <K extends keyof JobFormData>(field: K, value: JobFormData[K]) => {
         setFormData(prev => ({ ...prev, [field]: value }));
     };
 
-    const addRequirement = () => {
-        setFormData(prev => ({ ...prev, requirements: [...prev.requirements, ""] }));
-    };
-
-    const removeRequirement = (index: number) => {
-        setFormData(prev => ({
-            ...prev,
-            requirements: prev.requirements.filter((_, i) => i !== index)
-        }));
-    };
-
-    const updateRequirement = (index: number, value: string) => {
-        setFormData(prev => ({
-            ...prev,
-            requirements: prev.requirements.map((req, i) => i === index ? value : req)
-        }));
-    };
-
-    const addBenefit = () => {
-        setFormData(prev => ({ ...prev, benefits: [...prev.benefits, ""] }));
-    };
-
-    const removeBenefit = (index: number) => {
-        setFormData(prev => ({
-            ...prev,
-            benefits: prev.benefits.filter((_, i) => i !== index)
-        }));
-    };
-
-    const updateBenefit = (index: number, value: string) => {
-        setFormData(prev => ({
-            ...prev,
-            benefits: prev.benefits.map((ben, i) => i === index ? value : ben)
-        }));
-    };
-
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        console.log("Form submitted:", formData);
-        router.push("/employer/my-jobs");
+        setIsSubmitting(true);
+        setError(null);
+
+        // Validation
+        if (!formData.title.trim()) {
+            setError("Job title is required");
+            setIsSubmitting(false);
+            return;
+        }
+        if (!formData.description.trim()) {
+            setError("Job description is required");
+            setIsSubmitting(false);
+            return;
+        }
+        if (!formData.location.trim()) {
+            setError("Location is required");
+            setIsSubmitting(false);
+            return;
+        }
+        if (!formData.startDate) {
+            setError("Start date is required");
+            setIsSubmitting(false);
+            return;
+        }
+
+        try {
+            await jobsService.createJob({
+                title: formData.title,
+                description: formData.description,
+                location: formData.location,
+                startDate: new Date(formData.startDate).toISOString(),
+                durationDays: formData.durationDays,
+                workerQuota: formData.workerQuota,
+                salary: formData.salary,
+                type: formData.type,
+            });
+
+            router.push("/employer/my-jobs");
+        } catch (err) {
+            console.error("Error creating job:", err);
+            setError("Failed to create job. Please try again.");
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (
@@ -112,7 +125,14 @@ export default function CreateJobPage() {
                 </div>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl">
+                {/* Error Message */}
+                {error && (
+                    <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg">
+                        {error}
+                    </div>
+                )}
+
                 {/* Basic Information */}
                 <Card>
                     <CardHeader>
@@ -122,52 +142,82 @@ export default function CreateJobPage() {
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="title">Job Title *</Label>
-                                <Input
-                                    id="title"
-                                    placeholder="e.g. Warehouse Associate"
-                                    value={formData.title}
-                                    onChange={(e) => updateField("title", e.target.value)}
-                                    required
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="category">Category *</Label>
-                                <Input
-                                    id="category"
-                                    placeholder="e.g. Warehouse, Retail, Events"
-                                    value={formData.category}
-                                    onChange={(e) => updateField("category", e.target.value)}
-                                    required
-                                />
-                            </div>
-                        </div>
                         <div className="space-y-2">
-                            <Label htmlFor="positions">Number of Positions *</Label>
+                            <Label htmlFor="title">Job Title *</Label>
                             <Input
-                                id="positions"
-                                type="number"
-                                min={1}
-                                value={formData.positions}
-                                onChange={(e) => updateField("positions", parseInt(e.target.value) || 1)}
+                                id="title"
+                                placeholder="e.g., Warehouse Associate, Event Staff"
+                                value={formData.title}
+                                onChange={(e) => updateField("title", e.target.value)}
+                                required
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="type">Job Type *</Label>
+                            <Select
+                                value={formData.type}
+                                onValueChange={(value) => updateField("type", value as JobType)}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select job type" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {jobTypes.map((type) => (
+                                        <SelectItem key={type.value} value={type.value}>
+                                            {type.label}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="description">Job Description *</Label>
+                            <Textarea
+                                id="description"
+                                placeholder="Describe the job responsibilities, requirements, and any other relevant details..."
+                                value={formData.description}
+                                onChange={(e) => updateField("description", e.target.value)}
+                                rows={5}
                                 required
                             />
                         </div>
                     </CardContent>
                 </Card>
 
-                {/* Duration & Schedule */}
+                {/* Location */}
                 <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
-                            <Clock className="h-5 w-5 text-primary" />
-                            Duration & Schedule
+                            <MapPin className="h-5 w-5 text-primary" />
+                            Location
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="space-y-2">
+                            <Label htmlFor="location">Work Location *</Label>
+                            <Input
+                                id="location"
+                                placeholder="e.g., District 7, Ho Chi Minh City"
+                                value={formData.location}
+                                onChange={(e) => updateField("location", e.target.value)}
+                                required
+                            />
+                        </div>
+                    </CardContent>
+                </Card>
+
+                {/* Schedule */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <Calendar className="h-5 w-5 text-primary" />
+                            Schedule
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label htmlFor="startDate">Start Date *</Label>
                                 <Input
@@ -175,187 +225,102 @@ export default function CreateJobPage() {
                                     type="date"
                                     value={formData.startDate}
                                     onChange={(e) => updateField("startDate", e.target.value)}
+                                    min={new Date().toISOString().split('T')[0]}
                                     required
                                 />
                             </div>
+
                             <div className="space-y-2">
-                                <Label htmlFor="endDate">End Date *</Label>
+                                <Label htmlFor="durationDays">Duration (days) *</Label>
                                 <Input
-                                    id="endDate"
-                                    type="date"
-                                    value={formData.endDate}
-                                    onChange={(e) => updateField("endDate", e.target.value)}
+                                    id="durationDays"
+                                    type="number"
+                                    min={1}
+                                    max={365}
+                                    value={formData.durationDays}
+                                    onChange={(e) => updateField("durationDays", parseInt(e.target.value) || 1)}
                                     required
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="duration">Duration</Label>
-                                <Input
-                                    id="duration"
-                                    placeholder="e.g. 5 days, 1 week"
-                                    value={formData.duration}
-                                    onChange={(e) => updateField("duration", e.target.value)}
                                 />
                             </div>
                         </div>
+                    </CardContent>
+                </Card>
+
+                {/* Salary */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            💰 Salary
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
                         <div className="space-y-2">
-                            <Label htmlFor="workSchedule">Work Schedule *</Label>
+                            <Label htmlFor="salary">Salary (VND) *</Label>
                             <Input
-                                id="workSchedule"
-                                placeholder="e.g. Monday - Friday, 8:00 AM - 5:00 PM"
-                                value={formData.workSchedule}
-                                onChange={(e) => updateField("workSchedule", e.target.value)}
+                                id="salary"
+                                type="number"
+                                min={0}
+                                placeholder="e.g., 500000"
+                                value={formData.salary || ""}
+                                onChange={(e) => updateField("salary", parseInt(e.target.value) || 0)}
                                 required
                             />
+                            <p className="text-sm text-muted-foreground">
+                                Total salary for the job
+                            </p>
                         </div>
                     </CardContent>
                 </Card>
 
-                {/* Location & Compensation */}
+                {/* Workers */}
                 <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
-                            <MapPin className="h-5 w-5 text-primary" />
-                            Location & Compensation
+                            <Users className="h-5 w-5 text-primary" />
+                            Workers Needed
                         </CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="location">City/Area *</Label>
-                                <Input
-                                    id="location"
-                                    placeholder="e.g. Chicago, IL"
-                                    value={formData.location}
-                                    onChange={(e) => updateField("location", e.target.value)}
-                                    required
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="address">Full Address</Label>
-                                <Input
-                                    id="address"
-                                    placeholder="e.g. 123 Main St, Chicago, IL 60601"
-                                    value={formData.address}
-                                    onChange={(e) => updateField("address", e.target.value)}
-                                />
-                            </div>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="salary">Salary/Rate *</Label>
-                                <Input
-                                    id="salary"
-                                    placeholder="e.g. $18"
-                                    value={formData.salary}
-                                    onChange={(e) => updateField("salary", e.target.value)}
-                                    required
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="salaryType">Salary Type *</Label>
-                                <select
-                                    id="salaryType"
-                                    value={formData.salaryType}
-                                    onChange={(e) => updateField("salaryType", e.target.value)}
-                                    className="w-full h-10 rounded-md border border-input bg-background px-3 py-1 text-sm"
-                                    required
-                                >
-                                    <option value="hourly">Per Hour</option>
-                                    <option value="daily">Per Day</option>
-                                    <option value="weekly">Per Week</option>
-                                    <option value="fixed">Fixed Amount</option>
-                                </select>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-
-                {/* Description & Requirements */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <FileText className="h-5 w-5 text-primary" />
-                            Description & Requirements
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
+                    <CardContent>
                         <div className="space-y-2">
-                            <Label htmlFor="description">Job Description *</Label>
-                            <Textarea
-                                id="description"
-                                placeholder="Describe the job responsibilities, expectations, and any other relevant details..."
-                                value={formData.description}
-                                onChange={(e) => updateField("description", e.target.value)}
+                            <Label htmlFor="workerQuota">Number of Workers *</Label>
+                            <Input
+                                id="workerQuota"
+                                type="number"
+                                min={1}
+                                max={100}
+                                value={formData.workerQuota}
+                                onChange={(e) => updateField("workerQuota", parseInt(e.target.value) || 1)}
                                 required
                             />
-                        </div>
-
-                        {/* Requirements */}
-                        <div className="space-y-3">
-                            <Label>Requirements</Label>
-                            {formData.requirements.map((req, index) => (
-                                <div key={index} className="flex items-center gap-2">
-                                    <Input
-                                        placeholder={`Requirement ${index + 1}`}
-                                        value={req}
-                                        onChange={(e) => updateRequirement(index, e.target.value)}
-                                    />
-                                    {formData.requirements.length > 1 && (
-                                        <Button
-                                            type="button"
-                                            variant="outline"
-                                            className="h-9 w-9 p-0 border-0"
-                                            onClick={() => removeRequirement(index)}
-                                        >
-                                            <X className="h-4 w-4" />
-                                        </Button>
-                                    )}
-                                </div>
-                            ))}
-                            <Button type="button" variant="outline" size="small" onClick={addRequirement}>
-                                <Plus className="h-4 w-4 mr-2" />
-                                Add Requirement
-                            </Button>
-                        </div>
-
-                        {/* Benefits */}
-                        <div className="space-y-3">
-                            <Label>Benefits</Label>
-                            {formData.benefits.map((benefit, index) => (
-                                <div key={index} className="flex items-center gap-2">
-                                    <Input
-                                        placeholder={`Benefit ${index + 1}`}
-                                        value={benefit}
-                                        onChange={(e) => updateBenefit(index, e.target.value)}
-                                    />
-                                    {formData.benefits.length > 1 && (
-                                        <Button
-                                            type="button"
-                                            variant="outline"
-                                            className="h-9 w-9 p-0 border-0"
-                                            onClick={() => removeBenefit(index)}
-                                        >
-                                            <X className="h-4 w-4" />
-                                        </Button>
-                                    )}
-                                </div>
-                            ))}
-                            <Button type="button" variant="outline" size="small" onClick={addBenefit}>
-                                <Plus className="h-4 w-4 mr-2" />
-                                Add Benefit
-                            </Button>
+                            <p className="text-sm text-muted-foreground">
+                                How many workers do you need for this job?
+                            </p>
                         </div>
                     </CardContent>
                 </Card>
 
-                {/* Submit Button */}
-                <div className="flex items-center justify-end gap-4">
-                    <Button type="button" variant="outline" onClick={() => router.back()}>
+                {/* Submit Buttons */}
+                <div className="flex justify-end gap-4">
+                    <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => router.back()}
+                        disabled={isSubmitting}
+                    >
                         Cancel
                     </Button>
-                    <Button type="submit">
-                        Post Job
+                    <Button type="submit" disabled={isSubmitting}>
+                        {isSubmitting ? (
+                            <>
+                                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                                Creating...
+                            </>
+                        ) : (
+                            <>
+                                <FileText className="h-4 w-4 mr-2" />
+                                Post Job
+                            </>
+                        )}
                     </Button>
                 </div>
             </form>

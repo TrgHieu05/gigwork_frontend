@@ -1,93 +1,99 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Loader2 } from "lucide-react";
 
 import { EmployeeJobCard, type EmployeeJob } from "@/components/feature/employee/EmployeeJobCard";
 import { EmployeeApplicationCard, type EmployeeApplication } from "@/components/feature/employee/EmployeeApplicationCard";
-
-// Mock data for completed jobs
-const completedJobs: EmployeeJob[] = [
-    {
-        id: "1",
-        title: "Warehouse Assistant",
-        company: "LogiCorp",
-        location: "District 12, TPHCM",
-        completedDate: "15/11/2025",
-        duration: "3 days",
-        earned: "$180",
-        rating: 5,
-    },
-    {
-        id: "2",
-        title: "Event Staff",
-        company: "EventPro",
-        location: "District 7, TPHCM",
-        completedDate: "10/11/2025",
-        duration: "2 days",
-        earned: "$120",
-        rating: 4,
-    },
-    {
-        id: "3",
-        title: "Retail Associate",
-        company: "FashionMart",
-        location: "District 1, TPHCM",
-        completedDate: "01/11/2025",
-        duration: "5 days",
-        earned: "$250",
-        rating: 5,
-    },
-];
-
-// Mock data for application history
-const applicationHistory: EmployeeApplication[] = [
-    {
-        id: "1",
-        title: "Restaurant Server",
-        company: "Fine Dining Group",
-        time: "05/12/2025",
-        status: "Pending",
-    },
-    {
-        id: "2",
-        title: "Retail Sales",
-        company: "Fashion Inc.",
-        time: "03/12/2025",
-        status: "Accepted",
-    },
-    {
-        id: "3",
-        title: "Delivery Driver",
-        company: "QuickShip",
-        time: "01/12/2025",
-        status: "Rejected",
-    },
-    {
-        id: "4",
-        title: "Barista",
-        company: "Coffee House",
-        time: "28/11/2025",
-        status: "Accepted",
-    },
-    {
-        id: "5",
-        title: "Cashier",
-        company: "SuperMart",
-        time: "25/11/2025",
-        status: "Rejected",
-    },
-];
+import { profileService } from "@/services/profile";
 
 export default function EmployeeHistoryPage() {
     const [activeTab, setActiveTab] = useState("jobs");
     const [applicationFilter, setApplicationFilter] = useState("all");
+    const [isLoading, setIsLoading] = useState(true);
+    const [completedJobs, setCompletedJobs] = useState<EmployeeJob[]>([]);
+    const [applicationHistory, setApplicationHistory] = useState<EmployeeApplication[]>([]);
+
+    useEffect(() => {
+        const fetchData = async () => {
+            setIsLoading(true);
+            try {
+                const profile = await profileService.getCurrentUser();
+
+                // Transform applications from profile
+                if (profile.recentApplications) {
+                    const apps: EmployeeApplication[] = profile.recentApplications.map((app: {
+                        id: number;
+                        status: string;
+                        job?: { title: string; salary?: number };
+                        employer?: { companyName?: string };
+                        createdAt?: string
+                    }) => {
+                        // Map API status to component status
+                        const statusMap: Record<string, EmployeeApplication['status']> = {
+                            pending: "Pending",
+                            accepted: "Accepted",
+                            rejected: "Rejected",
+                            completed: "Completed",
+                            cancelled: "Cancelled",
+                        };
+
+                        return {
+                            id: String(app.id),
+                            title: app.job?.title || "Unknown Job",
+                            company: app.employer?.companyName || "Unknown Company",
+                            time: app.createdAt ? new Date(app.createdAt).toLocaleDateString() : "Recently",
+                            status: statusMap[app.status] || "Pending",
+                        };
+                    });
+
+                    setApplicationHistory(apps);
+
+                    // Filter completed jobs from applications
+                    const completed: EmployeeJob[] = profile.recentApplications
+                        .filter((app: { status: string }) => app.status === "completed")
+                        .map((app: {
+                            id: number;
+                            job?: { title: string; salary?: number; durationDays?: number; location?: string };
+                            employer?: { companyName?: string };
+                            createdAt?: string
+                        }) => ({
+                            id: String(app.id),
+                            title: app.job?.title || "Unknown Job",
+                            company: app.employer?.companyName || "Unknown Company",
+                            location: app.job?.location || "Unknown Location",
+                            completedDate: app.createdAt ? new Date(app.createdAt).toLocaleDateString() : "Recently",
+                            duration: app.job?.durationDays ? `${app.job.durationDays} days` : "N/A",
+                            earned: app.job?.salary ? `${app.job.salary.toLocaleString()} VND` : "N/A",
+                            rating: 0, // Would need separate review API
+                        }));
+
+                    setCompletedJobs(completed);
+                }
+            } catch (error) {
+                console.error("Error fetching history data:", error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchData();
+    }, []);
 
     const filteredApplications = applicationFilter === "all"
         ? applicationHistory
         : applicationHistory.filter(app => app.status.toLowerCase() === applicationFilter);
+
+    if (isLoading) {
+        return (
+            <div className="h-full flex items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+        );
+    }
 
     return (
         <div className="h-full p-6 overflow-auto">
@@ -100,8 +106,8 @@ export default function EmployeeHistoryPage() {
             {/* Main Tabs */}
             <Tabs value={activeTab} onValueChange={setActiveTab}>
                 <TabsList className="mb-6">
-                    <TabsTrigger value="jobs">Completed Jobs</TabsTrigger>
-                    <TabsTrigger value="applications">Applications</TabsTrigger>
+                    <TabsTrigger value="jobs">Completed Jobs ({completedJobs.length})</TabsTrigger>
+                    <TabsTrigger value="applications">Applications ({applicationHistory.length})</TabsTrigger>
                 </TabsList>
 
                 {/* Completed Jobs Tab */}
@@ -125,11 +131,11 @@ export default function EmployeeHistoryPage() {
                 <TabsContent value="applications">
                     {/* Sub-filters */}
                     <div className="flex gap-2 mb-4">
-                        {["all", "pending", "accepted", "rejected"].map((filter) => (
+                        {["all", "pending", "accepted", "rejected", "completed"].map((filter) => (
                             <Button
                                 key={filter}
                                 variant={applicationFilter === filter ? "default" : "outline"}
-                                size="small"
+                                size="sm"
                                 onClick={() => setApplicationFilter(filter)}
                             >
                                 {filter.charAt(0).toUpperCase() + filter.slice(1)}

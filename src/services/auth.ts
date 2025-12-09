@@ -14,6 +14,17 @@ export interface LoginRequest {
     password: string;
 }
 
+// Cookie helper functions
+function setCookie(name: string, value: string, days: number = 7): void {
+    const expires = new Date();
+    expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
+    document.cookie = `${name}=${value}; path=/; expires=${expires.toUTCString()}; SameSite=Lax`;
+}
+
+function removeCookie(name: string): void {
+    document.cookie = `${name}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+}
+
 // Auth service functions
 export const authService = {
     /**
@@ -23,10 +34,11 @@ export const authService = {
     async register(data: RegisterRequest): Promise<AuthPayload> {
         const response = await api.post<AuthPayload>('/api/auth/register', data);
 
-        // Store token and user info
+        // Store token and user info in both localStorage and cookies
         if (response.data.token) {
             localStorage.setItem('token', response.data.token);
             localStorage.setItem('user', JSON.stringify(response.data.user));
+            setCookie('token', response.data.token, 7); // 7 days
         }
 
         return response.data;
@@ -39,10 +51,11 @@ export const authService = {
     async login(data: LoginRequest): Promise<AuthPayload> {
         const response = await api.post<AuthPayload>('/api/auth/login', data);
 
-        // Store token and user info
+        // Store token and user info in both localStorage and cookies
         if (response.data.token) {
             localStorage.setItem('token', response.data.token);
             localStorage.setItem('user', JSON.stringify(response.data.user));
+            setCookie('token', response.data.token, 7); // 7 days
         }
 
         return response.data;
@@ -54,6 +67,8 @@ export const authService = {
     logout(): void {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
+        localStorage.removeItem('selectedRole');
+        removeCookie('token');
     },
 
     /**

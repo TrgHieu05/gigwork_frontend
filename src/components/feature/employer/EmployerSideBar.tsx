@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useEffect } from "react";
 import {
   LayoutDashboard,
   FileSearch,
@@ -26,6 +27,7 @@ import { Button } from "@/components/ui/button";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { LogoutModal, useLogoutModal } from "@/components/shared/LogoutModal";
+import { authService } from "@/services/auth";
 
 const itemsTop = [
   {
@@ -63,19 +65,21 @@ const itemsBottom = [
   },
 ]
 
-// Mock user data
-const mockUser = {
-  name: "Jane Smith",
-  avatar: null,
-};
-
 export function EmployerSideBar() {
   const pathname = usePathname();
   const router = useRouter();
   const { isOpen, openModal, closeModal } = useLogoutModal();
+  const [userName, setUserName] = useState("User");
+
+  useEffect(() => {
+    const user = authService.getCurrentUser();
+    if (user?.email) {
+      setUserName(user.email.split("@")[0]);
+    }
+  }, []);
 
   const handleLogout = () => {
-    console.log("Logging out...");
+    authService.logout();
     closeModal();
     router.push("/login");
   };
@@ -135,7 +139,7 @@ export function EmployerSideBar() {
                       <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
                         <User className="h-4 w-4 text-muted-foreground" />
                       </div>
-                      <span className="font-medium">{mockUser.name}</span>
+                      <span className="font-medium">{userName}</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

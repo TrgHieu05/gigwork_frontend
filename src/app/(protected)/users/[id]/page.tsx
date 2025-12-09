@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { authService } from "@/services/auth";
 import { profileService, UserProfile } from "@/services/profile";
+import { EditProfileModal } from "@/components/feature/profile/EditProfileModal";
 
 function getInitials(email: string): string {
     return email.split("@")[0].slice(0, 2).toUpperCase();
@@ -54,6 +55,7 @@ export default function UserProfilePage() {
     const [isOwner, setIsOwner] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [isUploading, setIsUploading] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
     useEffect(() => {
         const fetchProfile = async () => {
@@ -156,8 +158,11 @@ export default function UserProfilePage() {
     };
 
     const handleEditProfile = () => {
-        // TODO: Implement edit modal
-        alert("Edit profile modal will be implemented");
+        setIsEditModalOpen(true);
+    };
+
+    const handleProfileSave = (updatedProfile: UserProfile) => {
+        setProfile(updatedProfile);
     };
 
     if (isLoading) {
@@ -405,21 +410,29 @@ export default function UserProfilePage() {
                                 <CardTitle className="text-lg">Skills</CardTitle>
                             </CardHeader>
                             <CardContent>
-                                {profile.workerProfile?.skills && Object.keys(profile.workerProfile.skills).length > 0 ? (
-                                    <div className="flex flex-wrap gap-2">
-                                        {Object.entries(profile.workerProfile.skills)
-                                            .filter(([, value]) => value)
-                                            .map(([skill]) => (
-                                                <Badge key={skill} variant="secondary" className="capitalize">
-                                                    {skill.replace(/_/g, " ")}
-                                                </Badge>
-                                            ))}
-                                    </div>
-                                ) : (
-                                    <p className="text-muted-foreground italic">
-                                        {isOwner ? "Add skills to help employers find you" : "No skills listed"}
-                                    </p>
-                                )}
+                                {(() => {
+                                    // Handle skills as { list: string[] } structure from API
+                                    const skillsData = profile.workerProfile?.skills as { list?: string[] } | null;
+                                    const skillsList = skillsData?.list || [];
+
+                                    if (skillsList.length > 0) {
+                                        return (
+                                            <div className="flex flex-wrap gap-2">
+                                                {skillsList.map((skill) => (
+                                                    <Badge key={skill} variant="secondary" className="capitalize">
+                                                        {skill}
+                                                    </Badge>
+                                                ))}
+                                            </div>
+                                        );
+                                    }
+
+                                    return (
+                                        <p className="text-muted-foreground italic">
+                                            {isOwner ? "Add skills to help employers find you" : "No skills listed"}
+                                        </p>
+                                    );
+                                })()}
                             </CardContent>
                         </Card>
                     )}
@@ -454,6 +467,16 @@ export default function UserProfilePage() {
                     </Card>
                 </div>
             </div>
+
+            {/* Edit Profile Modal */}
+            {profile && (
+                <EditProfileModal
+                    open={isEditModalOpen}
+                    onOpenChange={setIsEditModalOpen}
+                    profile={profile}
+                    onSave={handleProfileSave}
+                />
+            )}
         </div>
     );
 }

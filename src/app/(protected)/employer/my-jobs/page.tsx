@@ -1,121 +1,121 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { JobCard, JobCardData, JobStatus } from "@/components/feature/employer/JobCard";
-import { Plus } from "lucide-react";
+import { Plus, Loader2 } from "lucide-react";
 import Link from "next/link";
+import { jobsService, Job } from "@/services/jobs";
 
-const mockJobs: JobCardData[] = [
-    {
-        id: "1",
-        title: "Warehouse Associate",
-        status: "open",
-        location: "Chicago, IL",
-        duration: "5 days",
-        salary: "$18/hr",
-        dateRange: "Oct 22 - Oct 26",
-        applicantsCount: 67,
-        hiredCount: 12,
-        viewsCount: 432,
-        postedDate: "Oct 8, 2024",
-    },
-    {
-        id: "2",
-        title: "Retail Sales Associate",
-        status: "closed",
-        location: "New York, NY",
-        duration: "1 week",
-        salary: "$19/hr",
-        dateRange: "Oct 15 - Oct 21",
-        applicantsCount: 89,
-        hiredCount: 15,
-        viewsCount: 567,
-        postedDate: "Oct 1, 2024",
-    },
-    {
-        id: "3",
-        title: "Event Staff",
-        status: "ongoing",
-        location: "Los Angeles, CA",
-        duration: "3 days",
-        salary: "$22/hr",
-        dateRange: "Oct 25 - Oct 27",
-        applicantsCount: 45,
-        hiredCount: 8,
-        viewsCount: 298,
-        postedDate: "Oct 10, 2024",
-    },
-    {
-        id: "4",
-        title: "Delivery Driver",
-        status: "upcoming",
-        location: "Miami, FL",
-        duration: "2 weeks",
-        salary: "$20/hr",
-        dateRange: "Nov 1 - Nov 14",
-        applicantsCount: 34,
-        hiredCount: 0,
-        viewsCount: 156,
-        postedDate: "Oct 15, 2024",
-    },
-    {
-        id: "5",
-        title: "Restaurant Server",
-        status: "completed",
-        location: "San Francisco, CA",
-        duration: "Weekend",
-        salary: "$15/hr + tips",
-        dateRange: "Oct 12 - Oct 13",
-        applicantsCount: 52,
-        hiredCount: 10,
-        viewsCount: 321,
-        postedDate: "Sep 28, 2024",
-    },
-    {
-        id: "6",
-        title: "Construction Helper",
-        status: "full",
-        location: "Houston, TX",
-        duration: "1 week",
-        salary: "$17/hr",
-        dateRange: "Oct 28 - Nov 3",
-        applicantsCount: 78,
-        hiredCount: 20,
-        viewsCount: 445,
-        postedDate: "Oct 5, 2024",
-    },
-];
+// Transform API job to JobCardData format
+function transformApiJob(apiJob: Job): JobCardData {
+    const startDate = new Date(apiJob.startDate);
+    const endDate = new Date(startDate);
+    endDate.setDate(endDate.getDate() + apiJob.durationDays);
+
+    // Map API status to UI status
+    const statusMap: Record<string, JobStatus> = {
+        open: "open",
+        full: "full",
+        ongoing: "ongoing",
+        completed: "completed",
+    };
+
+    return {
+        id: String(apiJob.id),
+        title: apiJob.title,
+        status: statusMap[apiJob.status] || "open",
+        location: apiJob.location,
+        duration: `${apiJob.durationDays} days`,
+        salary: "$15/hr", // Not in API
+        dateRange: `${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}`,
+        applicantsCount: apiJob.workerQuota,
+        hiredCount: 0, // Would need additional API
+        viewsCount: 0, // Would need additional API
+        postedDate: apiJob.createdAt ? new Date(apiJob.createdAt).toLocaleDateString() : "Recently",
+    };
+}
 
 const tabs: { value: JobStatus | "all"; label: string }[] = [
     { value: "all", label: "All Jobs" },
     { value: "open", label: "Open" },
     { value: "full", label: "Full" },
-    { value: "closed", label: "Closed" },
-    { value: "upcoming", label: "Upcoming" },
     { value: "ongoing", label: "Ongoing" },
     { value: "completed", label: "Completed" },
 ];
 
 export default function MyJobsPage() {
     const [activeTab, setActiveTab] = useState<JobStatus | "all">("all");
+    const [isLoading, setIsLoading] = useState(true);
+    const [jobs, setJobs] = useState<JobCardData[]>([]);
+
+    useEffect(() => {
+        const fetchJobs = async () => {
+            setIsLoading(true);
+            try {
+                // Fetch all jobs from API
+                const response = await jobsService.listJobs();
+                const transformedJobs = response.items.map((job) => {
+                    const startDate = new Date(job.startDate);
+                    const endDate = new Date(startDate);
+                    endDate.setDate(endDate.getDate() + job.durationDays);
+
+                    return {
+                        id: String(job.id),
+                        title: job.title,
+                        status: (job.status as JobStatus) || "open",
+                        location: job.location,
+                        duration: `${job.durationDays} days`,
+                        salary: job.salary ? `${job.salary.toLocaleString()} VND` : "Negotiable",
+                        dateRange: `${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}`,
+                        applicantsCount: job.workerQuota,
+                        hiredCount: 0,
+                        viewsCount: 0,
+                        postedDate: job.createdAt ? new Date(job.createdAt).toLocaleDateString() : "Recently",
+                    };
+                });
+
+                setJobs(transformedJobs);
+            } catch (error) {
+                console.error("Error fetching jobs:", error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchJobs();
+    }, []);
 
     const filteredJobs = activeTab === "all"
-        ? mockJobs
-        : mockJobs.filter((job) => job.status === activeTab);
+        ? jobs
+        : jobs.filter((job) => job.status === activeTab);
 
     const handleEdit = (id: string) => {
         console.log("Edit job:", id);
     };
 
-    const handleClose = (id: string) => {
-        console.log("Close job:", id);
+    const handleClose = async (id: string) => {
+        try {
+            await jobsService.deleteJob(Number(id));
+            setJobs(jobs.filter(j => j.id !== id));
+        } catch (error) {
+            console.error("Error closing job:", error);
+            alert("Failed to close job");
+        }
     };
 
     const handleRepost = (id: string) => {
         console.log("Repost job:", id);
     };
+
+    if (isLoading) {
+        return (
+            <div className="h-full flex items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+        );
+    }
 
     return (
         <div className="h-full p-6 space-y-6 overflow-auto">
@@ -149,7 +149,10 @@ export default function MyJobsPage() {
                     <div className="space-y-4">
                         {filteredJobs.length === 0 ? (
                             <div className="text-center py-12 text-muted-foreground">
-                                No jobs found in this category
+                                {jobs.length === 0
+                                    ? "You haven't posted any jobs yet. Click 'Post Job' to get started!"
+                                    : "No jobs found in this category"
+                                }
                             </div>
                         ) : (
                             filteredJobs.map((job) => (

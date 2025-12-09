@@ -1,91 +1,104 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { StatsCard } from "@/components/shared/StatsCard";
 import { RecentJobsCard, Job } from "@/components/feature/employer/RecentJobsCard";
 import {
   PendingApplicationsCard,
   Application,
 } from "@/components/feature/employer/PendingApplicationsCard";
-import { FileText, Briefcase, Users } from "lucide-react";
+import { FileText, Briefcase, Users, Loader2 } from "lucide-react";
 
-// Mock data for demonstration
-const mockJobs: Job[] = [
-  {
-    id: "1",
-    title: "Construction Helper in District 7",
-    status: "active",
-    postedDate: "05/12/2024",
-    applicationsCount: 12,
-  },
-  {
-    id: "2",
-    title: "Warehouse Loading Staff",
-    status: "active",
-    postedDate: "03/12/2024",
-    applicationsCount: 8,
-  },
-  {
-    id: "3",
-    title: "Office Cleaning Staff",
-    status: "closed",
-    postedDate: "28/11/2024",
-    applicationsCount: 15,
-  },
-  {
-    id: "4",
-    title: "Weekend Restaurant Helper",
-    status: "active",
-    postedDate: "25/11/2024",
-    applicationsCount: 6,
-  },
-  {
-    id: "5",
-    title: "Part-time Delivery Driver",
-    status: "draft",
-    postedDate: "20/11/2024",
-    applicationsCount: 0,
-  },
-];
-
-const mockApplications: Application[] = [
-  {
-    id: "1",
-    applicantName: "John Smith",
-    jobId: "1",
-    jobTitle: "Construction Helper in District 7",
-    appliedDate: "Today, 09:30",
-  },
-  {
-    id: "2",
-    applicantName: "Emily Johnson",
-    jobId: "2",
-    jobTitle: "Warehouse Loading Staff",
-    appliedDate: "Today, 08:15",
-  },
-  {
-    id: "3",
-    applicantName: "Michael Brown",
-    jobId: "1",
-    jobTitle: "Construction Helper in District 7",
-    appliedDate: "Yesterday, 16:45",
-  },
-  {
-    id: "4",
-    applicantName: "Sarah Davis",
-    jobId: "4",
-    jobTitle: "Weekend Restaurant Helper",
-    appliedDate: "Yesterday, 14:20",
-  },
-];
+// Import services
+import { authService } from "@/services/auth";
+import { profileService, UserProfile } from "@/services/profile";
+import { jobsService, Job as ApiJob } from "@/services/jobs";
 
 export default function EmployerDashboard() {
+  const [isLoading, setIsLoading] = useState(true);
+  const [userData, setUserData] = useState<UserProfile | null>(null);
+  const [companyName, setCompanyName] = useState("Company");
+  const [jobs, setJobs] = useState<ApiJob[]>([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        // Get current user info
+        const currentUser = authService.getCurrentUser();
+        if (currentUser?.email) {
+          setCompanyName(currentUser.email.split("@")[0]);
+        }
+
+        // Fetch full user data
+        const profile = await profileService.getCurrentUser();
+        setUserData(profile);
+
+        if (profile.employerProfile?.companyName) {
+          setCompanyName(profile.employerProfile.companyName);
+        }
+
+        // Fetch jobs with real application counts
+        const jobsResponse = await jobsService.listJobs();
+        setJobs(jobsResponse.items);
+      } catch (error) {
+        console.error("Error fetching dashboard data:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  // Transform recent jobs from API to component format
+  // Use real jobs data with actual application counts
+  const recentJobs: Job[] = jobs.slice(0, 5).map((job) => ({
+    id: String(job.id),
+    title: job.title,
+    status: job.status === "open" ? "active" : job.status === "completed" ? "closed" : "active",
+    postedDate: new Date(job.startDate).toLocaleDateString("en-GB"),
+    applicationsCount: job.applications?.length || 0, // Real application count
+  }));
+
+  // Transform applications from jobs
+  const pendingApplications: Application[] = jobs.flatMap((job) =>
+    (job.applications || [])
+      .filter((app) => app.status === "pending")
+      .slice(0, 5)
+      .map((app) => ({
+        id: String(app.id),
+        applicantName: app.worker?.name || `Worker #${app.workerId}`,
+        jobId: String(job.id),
+        jobTitle: job.title,
+        appliedDate: app.createdAt ? new Date(app.createdAt).toLocaleDateString() : "Recently",
+      }))
+  ).slice(0, 5);
+
+  // Calculate stats
+  const totalApplications = jobs.reduce((sum, job) => sum + (job.applications?.length || 0), 0);
+  const jobsPosted = jobs.length;
+  const employeesHired = jobs.reduce(
+    (sum, job) => sum + (job.applications?.filter((a: { status: string }) => a.status === "accepted" || a.status === "completed").length || 0),
+    0
+  );
+  const openJobs = jobs.filter((job) => job.status === "open").length;
+
+  if (isLoading) {
+    return (
+      <div className="h-full flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
     <div className="h-full p-6 space-y-6 overflow-auto">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold">Dashboard</h1>
         <p className="text-muted-foreground">
-          Welcome back! Here&apos;s an overview of your activity.
+          Welcome back, {companyName}! Here&apos;s an overview of your activity.
         </p>
       </div>
 
@@ -93,34 +106,34 @@ export default function EmployerDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <StatsCard
           title="Total Applications"
-          value={45}
+          value={totalApplications}
           icon={FileText}
-          trend={12}
-          description="this month"
+          trend={0}
+          description="received"
         />
         <StatsCard
           title="Jobs Posted"
-          value={8}
+          value={jobsPosted}
           icon={Briefcase}
-          trend={3}
-          description="this month"
+          trend={openJobs}
+          description="open positions"
         />
         <StatsCard
           title="Employees Hired"
-          value={23}
+          value={employeesHired}
           icon={Users}
-          trend={5}
-          description="this month"
+          trend={0}
+          description="workers"
         />
       </div>
 
       {/* Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Jobs */}
-        <RecentJobsCard jobs={mockJobs} />
+        <RecentJobsCard jobs={recentJobs} />
 
         {/* Pending Applications */}
-        <PendingApplicationsCard applications={mockApplications} />
+        <PendingApplicationsCard applications={pendingApplications} />
       </div>
     </div>
   );
