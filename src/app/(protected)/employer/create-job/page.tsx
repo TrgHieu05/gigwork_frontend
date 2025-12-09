@@ -24,6 +24,7 @@ import {
     Calendar,
 } from "lucide-react";
 import { jobsService, JobType } from "@/services/jobs";
+import { LocationSelector } from "@/components/shared/LocationSelector";
 
 // Job types matching API enum
 const jobTypes: { value: JobType; label: string }[] = [
@@ -215,50 +216,25 @@ export default function CreateJobPage() {
                             Location
                         </CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="province">Province/Region *</Label>
-                                <Input
-                                    id="province"
-                                    placeholder="e.g., Ho Chi Minh"
-                                    value={formData.province}
-                                    onChange={(e) => updateField("province", e.target.value)}
-                                    required
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="city">City/District *</Label>
-                                <Input
-                                    id="city"
-                                    placeholder="e.g., District 7"
-                                    value={formData.city}
-                                    onChange={(e) => updateField("city", e.target.value)}
-                                    required
-                                />
-                            </div>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="ward">Ward (Optional)</Label>
-                                <Input
-                                    id="ward"
-                                    placeholder="e.g., Tan Phu Ward"
-                                    value={formData.ward}
-                                    onChange={(e) => updateField("ward", e.target.value)}
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="address">Street Address *</Label>
-                                <Input
-                                    id="address"
-                                    placeholder="e.g., 123 Nguyen Van Linh"
-                                    value={formData.address}
-                                    onChange={(e) => updateField("address", e.target.value)}
-                                    required
-                                />
-                            </div>
-                        </div>
+                    <CardContent>
+                        <LocationSelector
+                            value={{
+                                province: formData.province,
+                                city: formData.city,
+                                ward: formData.ward,
+                                address: formData.address,
+                            }}
+                            onChange={(val) => {
+                                setFormData(prev => ({
+                                    ...prev,
+                                    province: val.province,
+                                    city: val.city,
+                                    ward: val.ward,
+                                    address: val.address
+                                }));
+                            }}
+                            required
+                        />
                     </CardContent>
                 </Card>
 
