@@ -19,7 +19,7 @@ import {
     Building,
     MapPin,
 } from "lucide-react";
-import { authService } from "@/services/auth";
+import { authService, getErrorMessage } from "@/services/auth";
 import { profileService, UserProfile } from "@/services/profile";
 import { EditProfileModal } from "@/components/feature/profile/EditProfileModal";
 
@@ -74,7 +74,7 @@ export default function UserProfilePage() {
                     setProfile(userData);
                 } catch (err) {
                     console.error("Error fetching own profile:", err);
-                    setError("Failed to load profile");
+                    setError(getErrorMessage(err));
                 }
             } else {
                 // For other users, we need to determine their role first

@@ -14,6 +14,7 @@ import { EmployeeApplicationCard, type EmployeeApplication } from "@/components/
 // Import services
 import { authService } from "@/services/auth";
 import { profileService, UserProfile } from "@/services/profile";
+import { formatJobLocation } from "@/services/jobs";
 
 export default function EmployeeDashboard() {
     const [isLoading, setIsLoading] = useState(true);
@@ -82,7 +83,11 @@ export default function EmployeeDashboard() {
         status: "Upcoming",
         startDate: new Date(job.startDate).toLocaleDateString(),
         duration: `${job.workerQuota} workers`,
-        location: job.location,
+        location: formatJobLocation({
+            province: job.province || "",
+            city: job.city || "",
+            address: job.address || "",
+        }),
     })) || [];
 
     // Extract days with jobs for calendar

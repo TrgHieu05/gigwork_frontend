@@ -117,6 +117,15 @@ export const authService = {
 export function getErrorMessage(error: unknown): string {
     if (error instanceof AxiosError) {
         const apiError = error.response?.data as ApiError | undefined;
+        
+        // Handle raw Prisma errors leaking to frontend
+        const detail = apiError?.detail || '';
+        if (typeof detail === 'string') {
+            if (detail.includes('Unique constraint failed') && detail.includes('email')) {
+                 return 'This email address is already registered. Please sign in or use a different email.';
+            }
+        }
+
         if (apiError?.detail) {
             return apiError.detail;
         }
