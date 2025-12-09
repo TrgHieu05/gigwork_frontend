@@ -56,6 +56,7 @@ export interface Job {
     employer?: {
         id: number;
         email: string;
+        companyName?: string;
     };
 }
 

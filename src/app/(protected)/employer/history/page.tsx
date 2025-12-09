@@ -56,7 +56,6 @@ function transformApiJob(apiJob: Job): JobCardData {
     dateRange: `${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}`,
     applicantsCount: apiJob.workerQuota,
     hiredCount: 0,
-    viewsCount: 0,
     postedDate: apiJob.createdAt ? new Date(apiJob.createdAt).toLocaleDateString() : "Recently",
   };
 }

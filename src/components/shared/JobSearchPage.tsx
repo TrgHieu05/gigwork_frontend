@@ -57,7 +57,7 @@ function transformApiJob(apiJob: ApiJob): Job {
     return {
         id: String(apiJob.id),
         title: apiJob.title,
-        company: "Employer", // Would need separate API call
+        company: apiJob.employer?.companyName || (apiJob.employer?.email ? apiJob.employer.email.split('@')[0] : "Employer"),
         location: getJobLocationString(apiJob),
         duration: `${apiJob.durationDays} days`,
         salary: apiJob.salary ? `${apiJob.salary.toLocaleString()} VND` : "Negotiable",

@@ -14,12 +14,14 @@ import { EmployeeApplicationCard, type EmployeeApplication } from "@/components/
 // Import services
 import { authService } from "@/services/auth";
 import { profileService, UserProfile } from "@/services/profile";
-import { formatJobLocation } from "@/services/jobs";
+import { formatJobLocation, jobsService, Job } from "@/services/jobs";
 
 export default function EmployeeDashboard() {
     const [isLoading, setIsLoading] = useState(true);
     const [userData, setUserData] = useState<UserProfile | null>(null);
     const [userName, setUserName] = useState("User");
+    const [activeJobs, setActiveJobs] = useState<EmployeeJob[]>([]);
+    const [recentApplications, setRecentApplications] = useState<EmployeeApplication[]>([]);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -34,6 +36,74 @@ export default function EmployeeDashboard() {
                 // Fetch full user data including stats
                 const profile = await profileService.getCurrentUser();
                 setUserData(profile);
+
+                // Fetch job details to get company names
+                const jobIds = new Set<number>();
+                profile.recentJobs?.forEach(j => jobIds.add(j.id));
+                profile.recentApplications?.forEach(a => {
+                    if (a.jobId) jobIds.add(a.jobId);
+                });
+
+                const jobDetailsMap = new Map<number, Job>();
+                if (jobIds.size > 0) {
+                    const jobsPromises = Array.from(jobIds).map(async (id) => {
+                        try {
+                            const job = await jobsService.getJob(id);
+                            return job;
+                        } catch (e) {
+                            console.error(`Failed to fetch job ${id}`, e);
+                            return null;
+                        }
+                    });
+                    
+                    const jobs = await Promise.all(jobsPromises);
+                    jobs.forEach(job => {
+                        if (job) jobDetailsMap.set(job.id, job);
+                    });
+                }
+
+                // Transform recent applications from API with enriched data
+                const apps: EmployeeApplication[] = profile.recentApplications?.map((app) => {
+                    const jobDetail = app.jobId ? jobDetailsMap.get(app.jobId) : null;
+                    const companyName = jobDetail?.employer?.companyName || 
+                                       (jobDetail?.employer?.email ? jobDetail.employer.email.split('@')[0] : "Employer");
+                    
+                    return {
+                        id: String(app.applicationId),
+                        title: app.jobTitle || jobDetail?.title || "Unknown Job",
+                        company: companyName,
+                        time: new Date(app.appliedAt).toLocaleDateString(),
+                        status: app.status === "accepted" ? "Accepted"
+                            : app.status === "pending" ? "Pending"
+                                : app.status === "completed" ? "Completed"
+                                    : "Rejected",
+                    };
+                }) || [];
+                setRecentApplications(apps);
+
+                // Transform recent jobs from API with enriched data
+                const jobs: EmployeeJob[] = profile.recentJobs?.map((job) => {
+                    const jobDetail = jobDetailsMap.get(job.id);
+                    const companyName = jobDetail?.employer?.companyName || 
+                                       (jobDetail?.employer?.email ? jobDetail.employer.email.split('@')[0] : "Employer");
+
+                    return {
+                        id: String(job.id),
+                        title: job.title,
+                        company: companyName,
+                        salary: jobDetail?.salary ? `${jobDetail.salary.toLocaleString()} VND` : (job.salary ? `${job.salary.toLocaleString()} VND` : ""),
+                        status: "Upcoming",
+                        startDate: new Date(job.startDate).toLocaleDateString(),
+                        duration: `${job.workerQuota} workers`,
+                        location: formatJobLocation(job.locationRef || {
+                            province: (job as any).province || "",
+                            city: (job as any).city || "",
+                            address: (job as any).address || "",
+                        }),
+                    };
+                }) || [];
+                setActiveJobs(jobs);
+
             } catch (error) {
                 console.error("Error fetching dashboard data:", error);
             } finally {
@@ -61,34 +131,6 @@ export default function EmployeeDashboard() {
             changePercent: 0,
         },
     };
-
-    // Transform recent applications from API
-    const recentApplications: EmployeeApplication[] = userData?.recentApplications?.map((app) => ({
-        id: String(app.applicationId),
-        title: app.jobTitle || "Unknown Job",
-        company: "Company", // Not in API response
-        time: new Date(app.appliedAt).toLocaleDateString(),
-        status: app.status === "accepted" ? "Accepted"
-            : app.status === "pending" ? "Pending"
-                : app.status === "completed" ? "Completed"
-                    : "Rejected",
-    })) || [];
-
-    // Transform recent jobs from API
-    const activeJobs: EmployeeJob[] = userData?.recentJobs?.map((job) => ({
-        id: String(job.id),
-        title: job.title,
-        company: "Employer", // Not in API response
-        salary: "", // Not in API response
-        status: "Upcoming",
-        startDate: new Date(job.startDate).toLocaleDateString(),
-        duration: `${job.workerQuota} workers`,
-        location: formatJobLocation({
-            province: job.province || "",
-            city: job.city || "",
-            address: job.address || "",
-        }),
-    })) || [];
 
     // Extract days with jobs for calendar
     const daysWithJobs = userData?.recentJobs?.map((job) => {
