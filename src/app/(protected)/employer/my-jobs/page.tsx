@@ -7,11 +7,12 @@ import { JobCard, JobCardData, JobStatus } from "@/components/feature/employer/J
 import { Plus, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { jobsService, Job, getJobLocationString } from "@/services/jobs";
+import { applicationsService, JobApplicationFull } from "@/services/applications";
 import { authService } from "@/services/auth";
 import { EditJobModal } from "@/components/feature/employer/EditJobModal";
 
-// Transform API job to JobCardData format
-function transformApiJob(apiJob: Job): JobCardData {
+// Transform API job to JobCardData format with applications data
+function transformApiJob(apiJob: Job, applications: JobApplicationFull[]): JobCardData {
     const startDate = new Date(apiJob.startDate);
     const endDate = new Date(startDate);
     endDate.setDate(endDate.getDate() + apiJob.durationDays);
@@ -25,10 +26,13 @@ function transformApiJob(apiJob: Job): JobCardData {
         completed: "completed",
     };
 
+    // Filter applications for this job
+    const jobApps = applications.filter(app => app.jobId === apiJob.id);
+
     // Calculate hired count from applications
-    const hiredCount = apiJob.applications?.filter(app => 
+    const hiredCount = jobApps.filter(app =>
         app.status.toLowerCase() === 'accepted' || app.status.toLowerCase() === 'hired'
-    ).length || 0;
+    ).length;
 
     return {
         id: String(apiJob.id),
@@ -38,7 +42,7 @@ function transformApiJob(apiJob: Job): JobCardData {
         duration: `${apiJob.durationDays} days`,
         salary: apiJob.salary ? `${apiJob.salary.toLocaleString()} VND` : "Negotiable",
         dateRange: `${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}`,
-        applicantsCount: apiJob.applications?.length || 0,
+        applicantsCount: jobApps.length,
         hiredCount: hiredCount,
         postedDate: apiJob.createdAt ? new Date(apiJob.createdAt).toLocaleDateString() : "Recently",
     };
@@ -64,35 +68,20 @@ export default function MyJobsPage() {
             const currentUser = authService.getCurrentUser();
             if (!currentUser) return;
 
-            // Fetch all jobs from API
-            const response = await jobsService.listJobs();
-            
-            // Note: Since listJobs might not return applications count for all jobs,
-            // we should ideally have the backend include it. 
-            // If the backend list endpoint doesn't return applications, 
-            // we have to be careful. Assuming it does or we accept 0 for now unless we fetch details.
-            // But based on previous issue, it seems applications array might be missing or empty in list response if not eager loaded.
-            // Let's verify if we need to fetch individual job details to get accurate count.
-            // However, fetching details for ALL jobs is expensive.
-            // Let's assume for now we use what we have, but if count is 0, it might be the API limitation.
-            // Actually, to fix "0 applicants" when there ARE applicants, it means listJobs response lacks this data.
-            // We can try to fetch details for the filtered jobs (usually small number for a single employer).
-            
-            const myJobs = response.items.filter(job => job.employerId === currentUser.id);
-            
-            // Fetch details for each job to ensure we get applications list
-            const detailedJobs = await Promise.all(
-                myJobs.map(async (job) => {
-                    try {
-                        return await jobsService.getJob(job.id);
-                    } catch (e) {
-                        console.error(`Failed to fetch details for job ${job.id}`, e);
-                        return job; // Fallback to list version
-                    }
+            // Fetch all jobs and applications in parallel
+            const [jobsResponse, allApplications] = await Promise.all([
+                jobsService.listJobs(),
+                applicationsService.getAll().catch(err => {
+                    console.error("Error fetching applications:", err);
+                    return [] as JobApplicationFull[];
                 })
-            );
+            ]);
 
-            const transformedJobs = detailedJobs.map(transformApiJob);
+            // Filter jobs by current employer
+            const myJobs = jobsResponse.items.filter(job => job.employerId === currentUser.id);
+
+            // Transform jobs with applications data
+            const transformedJobs = myJobs.map(job => transformApiJob(job, allApplications));
 
             setJobs(transformedJobs);
         } catch (error) {

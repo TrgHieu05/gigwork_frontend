@@ -13,13 +13,14 @@ import { FileText, Briefcase, Users, Loader2 } from "lucide-react";
 import { authService, getErrorMessage } from "@/services/auth";
 import { profileService, UserProfile } from "@/services/profile";
 import { jobsService, Job as ApiJob } from "@/services/jobs";
-import { applicationsService } from "@/services/applications";
+import { applicationsService, JobApplicationFull } from "@/services/applications";
 
 export default function EmployerDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [userData, setUserData] = useState<UserProfile | null>(null);
   const [companyName, setCompanyName] = useState("Company");
   const [jobs, setJobs] = useState<ApiJob[]>([]);
+  const [allApplications, setAllApplications] = useState<JobApplicationFull[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -35,11 +36,12 @@ export default function EmployerDashboard() {
         console.error("Error getting local user info:", e);
       }
 
-      // Fetch profile and jobs in parallel
+      // Fetch profile, jobs, and applications in parallel
       try {
-        const [profileResult, jobsResult] = await Promise.allSettled([
+        const [profileResult, jobsResult, appsResult] = await Promise.allSettled([
           profileService.getCurrentUser(),
-          jobsService.listJobs()
+          jobsService.listJobs(),
+          applicationsService.getAll()
         ]);
 
         let currentUserId: number | undefined;
@@ -57,28 +59,22 @@ export default function EmployerDashboard() {
           console.error("Raw profile error:", profileResult.reason);
         }
 
+        // Handle Applications Result
+        if (appsResult.status === 'fulfilled') {
+          setAllApplications(appsResult.value);
+        } else {
+          console.error("Error fetching applications:", getErrorMessage(appsResult.reason));
+          setAllApplications([]);
+        }
+
         // Handle Jobs Result
         if (jobsResult.status === 'fulfilled') {
           const allJobs = jobsResult.value.items;
-          
+
           // Filter jobs by current employer ID
           if (currentUserId) {
             const myJobs = allJobs.filter(job => job.employerId === currentUserId);
-            
-            // Fetch detailed info for each job to get applications
-            // listJobs API might not return applications or return empty array
-            const detailedJobs = await Promise.all(
-              myJobs.map(async (job) => {
-                try {
-                  return await jobsService.getJob(job.id);
-                } catch (e) {
-                  console.error(`Failed to fetch details for job ${job.id}`, e);
-                  return job;
-                }
-              })
-            );
-            
-            setJobs(detailedJobs);
+            setJobs(myJobs);
           } else {
             console.warn("Could not filter jobs: User ID missing");
             setJobs([]);
@@ -100,22 +96,13 @@ export default function EmployerDashboard() {
   const handleAccept = async (applicationId: string) => {
     try {
       await applicationsService.accept(Number(applicationId));
-      
-      // Update local state
-      setJobs(currentJobs => currentJobs.map(job => {
-        if (!job.applications) return job;
-        
-        const hasApp = job.applications.some(app => String(app.id) === applicationId);
-        if (hasApp) {
-          return {
-            ...job,
-            applications: job.applications.map(app => 
-              String(app.id) === applicationId ? { ...app, status: "accepted" } : app
-            )
-          };
-        }
-        return job;
-      }));
+
+      // Update local state for applications
+      setAllApplications(currentApps =>
+        currentApps.map(app =>
+          String(app.id) === applicationId ? { ...app, status: "accepted" as const } : app
+        )
+      );
     } catch (err) {
       console.error("Error accepting application:", err);
       alert("Failed to accept application");
@@ -125,59 +112,54 @@ export default function EmployerDashboard() {
   const handleReject = async (applicationId: string) => {
     try {
       await applicationsService.reject(Number(applicationId));
-      
-      // Update local state
-      setJobs(currentJobs => currentJobs.map(job => {
-        if (!job.applications) return job;
-        
-        const hasApp = job.applications.some(app => String(app.id) === applicationId);
-        if (hasApp) {
-          return {
-            ...job,
-            applications: job.applications.map(app => 
-              String(app.id) === applicationId ? { ...app, status: "rejected" } : app
-            )
-          };
-        }
-        return job;
-      }));
+
+      // Update local state for applications
+      setAllApplications(currentApps =>
+        currentApps.map(app =>
+          String(app.id) === applicationId ? { ...app, status: "cancelled" as const } : app
+        )
+      );
     } catch (err) {
       console.error("Error rejecting application:", err);
       alert("Failed to reject application");
     }
   };
 
+  // Get my job IDs
+  const myJobIds = new Set(jobs.map(job => job.id));
+
+  // Filter applications for my jobs
+  const myApplications = allApplications.filter(app => myJobIds.has(app.jobId));
+
   // Transform recent jobs from API to component format
-  // Use real jobs data with actual application counts
+  // Use real jobs data with actual application counts from API
   const recentJobs: Job[] = jobs.slice(0, 5).map((job) => ({
     id: String(job.id),
     title: job.title,
     status: job.status === "open" ? "active" : job.status === "completed" ? "closed" : "active",
     postedDate: new Date(job.startDate).toLocaleDateString("en-GB"),
-    applicationsCount: job.applications?.length || 0, // Real application count
+    applicationsCount: myApplications.filter(app => app.jobId === job.id).length,
   }));
 
-  // Transform applications from jobs
-  const pendingApplications: Application[] = jobs.flatMap((job) =>
-    (job.applications || [])
-      .filter((app) => app.status === "pending")
-      .slice(0, 5)
-      .map((app) => ({
+  // Transform applications from API
+  const pendingApplications: Application[] = myApplications
+    .filter((app) => app.status === "pending")
+    .slice(0, 5)
+    .map((app) => {
+      const job = jobs.find(j => j.id === app.jobId);
+      return {
         id: String(app.id),
-        applicantName: app.worker?.name || `Worker #${app.workerId}`,
-        jobId: String(job.id),
-        jobTitle: job.title,
-        appliedDate: app.createdAt ? new Date(app.createdAt).toLocaleDateString() : "Recently",
-      }))
-  ).slice(0, 5);
+        applicantName: app.worker?.email?.split('@')[0] || `Worker #${app.workerId}`,
+        jobId: String(app.jobId),
+        jobTitle: job?.title || app.job?.title || "Unknown Job",
+        appliedDate: app.appliedAt ? new Date(app.appliedAt).toLocaleDateString() : "Recently",
+      };
+    });
 
-  // Calculate stats
-  const totalApplications = jobs.reduce((sum, job) => sum + (job.applications?.length || 0), 0);
+  // Calculate stats from API applications
+  const totalApplications = myApplications.length;
   const jobsPosted = jobs.length;
-  const employeesHired = jobs.reduce(
-    (sum, job) => sum + (job.applications?.filter((a: { status: string }) => a.status === "accepted" || a.status === "completed").length || 0),
-    0
-  );
+  const employeesHired = myApplications.filter(a => a.status === "accepted" || a.status === "completed").length;
   const openJobs = jobs.filter((job) => job.status === "open").length;
 
   if (isLoading) {
@@ -229,8 +211,8 @@ export default function EmployerDashboard() {
         <RecentJobsCard jobs={recentJobs} />
 
         {/* Pending Applications */}
-        <PendingApplicationsCard 
-          applications={pendingApplications} 
+        <PendingApplicationsCard
+          applications={pendingApplications}
           onApprove={handleAccept}
           onReject={handleReject}
         />
