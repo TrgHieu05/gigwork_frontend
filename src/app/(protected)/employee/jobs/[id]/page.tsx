@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 import { jobsService, Job, getJobLocationString } from "@/services/jobs";
 import { applicationsService } from "@/services/applications";
+import { profileService } from "@/services/profile";
 import { authService } from "@/services/auth";
 
 const typeLabels: Record<string, string> = {

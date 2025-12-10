@@ -24,7 +24,6 @@ import {
 } from "lucide-react";
 import { jobsService, Job, getJobLocationString } from "@/services/jobs";
 import { applicationsService } from "@/services/applications";
-import { profileService } from "@/services/profile";
 import { authService } from "@/services/auth";
 import { EditJobModal } from "@/components/feature/employer/EditJobModal";
 import {
@@ -56,6 +55,7 @@ const statusConfig: Record<string, { label: string; color: string }> = {
 interface Application {
   id: number;
   workerId: number;
+  workerName?: string;
   workerEmail?: string;
   status: string;
   appliedAt: string;
@@ -91,18 +91,15 @@ export default function EmployerJobDetailsPage() {
           setIsOwner(true);
       }
 
-      // Note: Would need API endpoint for applications by job
-      // For now, using profile data
-      const profile = await profileService.getCurrentUser();
-      // Transform to applications format
-      const apps: Application[] = profile.recentApplications
-        ?.filter(a => a.jobId === jobId)
-        .map(a => ({
-          id: a.applicationId,
-          workerId: 0,
-          status: a.status,
-          appliedAt: a.appliedAt,
-        })) || [];
+      // Get applications from job data
+      const apps: Application[] = jobData.applications?.map(app => ({
+        id: app.id,
+        workerId: app.workerId,
+        workerName: app.worker?.name,
+        workerEmail: app.worker?.email,
+        status: app.status,
+        appliedAt: app.createdAt || new Date().toISOString(),
+      })) || [];
       setApplications(apps);
     } catch (err) {
       console.error("Error fetching job:", err);
@@ -352,11 +349,11 @@ export default function EmployerJobDetailsPage() {
                       <div className="flex items-center gap-3">
                         <Avatar>
                           <AvatarFallback>
-                            {String(app.workerId).slice(0, 2)}
+                            {app.workerName ? app.workerName.slice(0, 2).toUpperCase() : String(app.workerId).slice(0, 2)}
                           </AvatarFallback>
                         </Avatar>
                         <div>
-                          <p className="font-medium">Worker #{app.workerId}</p>
+                          <p className="font-medium">{app.workerName || `Worker #${app.workerId}`}</p>
                           <p className="text-sm text-muted-foreground">
                             Applied {new Date(app.appliedAt).toLocaleDateString()}
                           </p>
