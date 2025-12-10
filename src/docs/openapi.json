@@ -6,132 +6,879 @@
     "description": "REST API for Gigwork platform"
   },
   "servers": [
-    { "url": "http://localhost:3000" },
-    { "url": "https://gigwork-backend.onrender.com" }
+    {
+      "url": "http://localhost:3000"
+    },
+    {
+      "url": "https://gigwork-backend.onrender.com"
+    }
   ],
   "tags": [
-    { "name": "Auth", "description": "Authentication and verification" },
-    { "name": "Users", "description": "User account and profile" },
-    { "name": "Jobs", "description": "Jobs and related resources" },
-    { "name": "Applications", "description": "Job applications workflow" },
-    { "name": "Reviews", "description": "User reviews" },
-    { "name": "Notifications", "description": "User notifications" },
-    { "name": "Profiles", "description": "User profiles and images" }
+    {
+      "name": "Auth",
+      "description": "Authentication and verification"
+    },
+    {
+      "name": "Users",
+      "description": "User account and profile"
+    },
+    {
+      "name": "Jobs",
+      "description": "Jobs and related resources"
+    },
+    {
+      "name": "Applications",
+      "description": "Job applications workflow"
+    },
+    {
+      "name": "Reviews",
+      "description": "User reviews"
+    },
+    {
+      "name": "Notifications",
+      "description": "User notifications"
+    },
+    {
+      "name": "Profiles",
+      "description": "User profiles and images"
+    }
   ],
   "components": {
     "securitySchemes": {
-      "BearerAuth": { "type": "http", "scheme": "bearer", "bearerFormat": "JWT" }
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
     },
     "schemas": {
       "AuthPayload": {
         "type": "object",
         "properties": {
-          "token": { "type": "string" },
+          "token": {
+            "type": "string"
+          },
           "user": {
             "type": "object",
             "properties": {
-              "id": { "type": "integer" },
-              "email": { "type": "string" },
-              "isWorker": { "type": "boolean" },
-              "isEmployer": { "type": "boolean" },
-              "isVerified": { "type": "boolean" }
+              "id": {
+                "type": "integer"
+              },
+              "email": {
+                "type": "string"
+              },
+              "isWorker": {
+                "type": "boolean"
+              },
+              "isEmployer": {
+                "type": "boolean"
+              },
+              "isVerified": {
+                "type": "boolean"
+              }
             }
           }
         }
       },
-      "AuthToken": { "type": "object", "properties": { "token": { "type": "string" } } },
+      "AuthToken": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string"
+          }
+        }
+      },
       "ProblemDetails": {
         "type": "object",
         "properties": {
-          "type": { "type": "string" },
-          "title": { "type": "string" },
-          "status": { "type": "integer" },
-          "detail": { "type": "string" },
-          "instance": { "type": "string" },
-          "content": { "type": "object" }
+          "type": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "type": "integer"
+          },
+          "detail": {
+            "type": "string"
+          },
+          "instance": {
+            "type": "string"
+          },
+          "content": {
+            "type": "object"
+          }
         }
       },
       "Job": {
         "type": "object",
         "properties": {
-          "id": { "type": "integer" },
-          "employerId": { "type": "integer" },
-          "title": { "type": "string" },
-          "description": { "type": "string" },
-          "companyName": { "type": "string" },
-          "sessionId": { "type": "integer", "nullable": true },
-          "skillId": { "type": "integer", "nullable": true },
-          "locationId": { "type": "integer", "nullable": true },
-          "locationRef": { "$ref": "#/components/schemas/JobLocation" },
-          "startDate": { "type": "string", "format": "date-time" },
-          "durationDays": { "type": "integer" },
-          "workerQuota": { "type": "integer" },
-          "salary": { "type": "integer" },
-          "status": { "type": "string", "enum": ["open","full","ongoing","completed"] },
-          "type": { "type": "string", "enum": ["physical_work","fnb","event","retail","others"] },
-          "sessions": { "type": "array", "items": { "$ref": "#/components/schemas/JobSession" } },
-          "skills": { "type": "array", "items": { "$ref": "#/components/schemas/JobRequiredSkill" } },
-          "employer": { "type": "object", "properties": { "id": { "type": "integer" }, "email": { "type": "string" } } }
+          "id": {
+            "type": "integer"
+          },
+          "employerId": {
+            "type": "integer"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "companyName": {
+            "type": "string"
+          },
+          "sessionId": {
+            "type": "integer",
+            "nullable": true
+          },
+          "skillId": {
+            "type": "integer",
+            "nullable": true
+          },
+          "locationId": {
+            "type": "integer",
+            "nullable": true
+          },
+          "locationRef": {
+            "$ref": "#/components/schemas/JobLocation"
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "durationDays": {
+            "type": "integer"
+          },
+          "workerQuota": {
+            "type": "integer"
+          },
+          "salary": {
+            "type": "integer"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "open",
+              "full",
+              "ongoing",
+              "completed"
+            ]
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "physical_work",
+              "fnb",
+              "event",
+              "retail",
+              "others"
+            ]
+          },
+          "sessions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/JobSession"
+            }
+          },
+          "skills": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/JobRequiredSkill"
+            }
+          },
+          "employer": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "integer"
+              },
+              "email": {
+                "type": "string"
+              }
+            }
+          }
         }
       },
       "JobSession": {
         "type": "object",
         "properties": {
-          "id": { "type": "integer" },
-          "jobId": { "type": "integer" },
-          "sessionDate": { "type": "string", "format": "date-time" },
-          "startTime": { "type": "string", "format": "date-time" },
-          "endTime": { "type": "string", "format": "date-time" }
+          "id": {
+            "type": "integer"
+          },
+          "jobId": {
+            "type": "integer"
+          },
+          "sessionDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "startTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "endTime": {
+            "type": "string",
+            "format": "date-time"
+          }
         }
       },
-      "JobRequiredSkill": { "type": "object", "properties": { "id": { "type": "integer" }, "jobId": { "type": "integer" }, "skillName": { "type": "string" } } },
-      "JobLocation": { "type": "object", "properties": { "jobId": { "type": "integer" }, "province": { "type": "string" }, "city": { "type": "string" }, "ward": { "type": "string", "nullable": true }, "address": { "type": "string" } } },
+      "JobRequiredSkill": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "jobId": {
+            "type": "integer"
+          },
+          "skillName": {
+            "type": "string"
+          }
+        }
+      },
+      "JobLocation": {
+        "type": "object",
+        "properties": {
+          "jobId": {
+            "type": "integer"
+          },
+          "province": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "ward": {
+            "type": "string",
+            "nullable": true
+          },
+          "address": {
+            "type": "string"
+          }
+        }
+      },
       "UserMe": {
         "type": "object",
         "properties": {
-          "id": { "type": "integer" },
-          "email": { "type": "string" },
-          "phone": { "type": "string", "nullable": true },
-          "createdAt": { "type": "string", "format": "date-time" },
-          "updatedAt": { "type": "string", "format": "date-time" },
-          "lastLoginAt": { "type": "string", "format": "date-time", "nullable": true },
-          "isVerified": { "type": "boolean" },
-          "isActive": { "type": "boolean" },
-          "bannedAt": { "type": "string", "format": "date-time", "nullable": true },
-          "isWorker": { "type": "boolean" },
-          "isEmployer": { "type": "boolean" },
-          "workerProfile": { "type": "object", "nullable": true, "properties": { "bio": { "type": "string", "nullable": true }, "skills": { "type": "object", "nullable": true }, "dob": { "type": "string", "format": "date-time", "nullable": true }, "gender": { "type": "string", "nullable": true } } },
-          "employerProfile": { "type": "object", "nullable": true, "properties": { "companyName": { "type": "string" }, "companyAddress": { "type": "string", "nullable": true } } },
-          "ratingAvg": { "type": "number" },
-          "ratingCount": { "type": "integer" },
-          "applicationCounts": { "type": "object", "properties": { "pending": { "type": "integer" }, "accepted": { "type": "integer" }, "completed": { "type": "integer" }, "cancelled": { "type": "integer" } } },
-          "jobCounts": { "type": "object", "nullable": true, "properties": { "total": { "type": "integer" }, "open": { "type": "integer" } } },
-          "unreadNotifications": { "type": "integer" },
-          "recentApplications": { "type": "array", "items": { "type": "object", "properties": { "applicationId": { "type": "integer" }, "jobId": { "type": "integer", "nullable": true }, "jobTitle": { "type": "string", "nullable": true }, "status": { "type": "string" }, "appliedAt": { "type": "string", "format": "date-time" } } } },
-          "recentJobs": { "type": "array", "items": { "type": "object", "properties": { "id": { "type": "integer" }, "title": { "type": "string" }, "startDate": { "type": "string", "format": "date-time" }, "workerQuota": { "type": "integer" }, "salary": { "type": "integer" }, "locationRef": { "type": "object", "properties": { "province": { "type": "string" }, "city": { "type": "string" }, "ward": { "type": "string", "nullable": true }, "address": { "type": "string" } } }, "status": { "type": "string", "enum": ["open","full","ongoing","completed"] } } } },
-          "notificationsPreview": { "type": "array", "items": { "type": "object", "properties": { "id": { "type": "integer" }, "title": { "type": "string" }, "type": { "type": "string" }, "createdAt": { "type": "string", "format": "date-time" } } } }
+          "id": {
+            "type": "integer"
+          },
+          "email": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "lastLoginAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "isVerified": {
+            "type": "boolean"
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "bannedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "isWorker": {
+            "type": "boolean"
+          },
+          "isEmployer": {
+            "type": "boolean"
+          },
+          "workerProfile": {
+            "type": "object",
+            "nullable": true,
+            "properties": {
+              "bio": {
+                "type": "string",
+                "nullable": true
+              },
+              "skills": {
+                "type": "object",
+                "nullable": true
+              },
+              "dob": {
+                "type": "string",
+                "format": "date-time",
+                "nullable": true
+              },
+              "gender": {
+                "type": "string",
+                "nullable": true
+              }
+            }
+          },
+          "employerProfile": {
+            "type": "object",
+            "nullable": true,
+            "properties": {
+              "companyName": {
+                "type": "string"
+              },
+              "companyAddress": {
+                "type": "string",
+                "nullable": true
+              }
+            }
+          },
+          "ratingAvg": {
+            "type": "number"
+          },
+          "ratingCount": {
+            "type": "integer"
+          },
+          "applicationCounts": {
+            "type": "object",
+            "properties": {
+              "pending": {
+                "type": "integer"
+              },
+              "accepted": {
+                "type": "integer"
+              },
+              "completed": {
+                "type": "integer"
+              },
+              "cancelled": {
+                "type": "integer"
+              }
+            }
+          },
+          "jobCounts": {
+            "type": "object",
+            "nullable": true,
+            "properties": {
+              "total": {
+                "type": "integer"
+              },
+              "open": {
+                "type": "integer"
+              }
+            }
+          },
+          "unreadNotifications": {
+            "type": "integer"
+          },
+          "recentApplications": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "applicationId": {
+                  "type": "integer"
+                },
+                "jobId": {
+                  "type": "integer",
+                  "nullable": true
+                },
+                "jobTitle": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "status": {
+                  "type": "string"
+                },
+                "appliedAt": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              }
+            }
+          },
+          "recentJobs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "integer"
+                },
+                "title": {
+                  "type": "string"
+                },
+                "startDate": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "workerQuota": {
+                  "type": "integer"
+                },
+                "salary": {
+                  "type": "integer"
+                },
+                "locationRef": {
+                  "type": "object",
+                  "properties": {
+                    "province": {
+                      "type": "string"
+                    },
+                    "city": {
+                      "type": "string"
+                    },
+                    "ward": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "address": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "open",
+                    "full",
+                    "ongoing",
+                    "completed"
+                  ]
+                }
+              }
+            }
+          },
+          "notificationsPreview": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "integer"
+                },
+                "title": {
+                  "type": "string"
+                },
+                "type": {
+                  "type": "string"
+                },
+                "createdAt": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              }
+            }
+          }
+        }
+      },
+      "JobApplicationFull": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "jobId": {
+            "type": "integer"
+          },
+          "workerId": {
+            "type": "integer"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "accepted",
+              "confirmed",
+              "completed",
+              "cancelled"
+            ]
+          },
+          "isComplete": {
+            "type": "boolean"
+          },
+          "isPaid": {
+            "type": "boolean"
+          },
+          "appliedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "job": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "integer"
+              },
+              "title": {
+                "type": "string"
+              },
+              "employerId": {
+                "type": "integer"
+              },
+              "startDate": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "durationDays": {
+                "type": "integer"
+              },
+              "salary": {
+                "type": "integer"
+              }
+            }
+          },
+          "worker": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "integer"
+              },
+              "email": {
+                "type": "string"
+              }
+            }
+          }
         }
       }
     },
     "responses": {
-      "AuthUnauthorized": { "description": "Unauthorized", "content": { "application/problem+json": { "schema": { "allOf": [ { "$ref": "#/components/schemas/ProblemDetails" }, { "type": "object", "properties": { "errorCode": { "type": "string" }, "hint": { "type": "string" } } } ] }, "examples": { "unauthorized": { "value": { "type": "about:blank", "title": "Unauthorized", "status": 401, "detail": "Missing or invalid token. Please sign in again", "instance": "/api/auth/login", "errorCode": "AUTH_UNAUTHORIZED", "hint": "Send Authorization: Bearer <token>" } } } } } },
-      "AuthBadRequest": { "description": "Bad Request", "content": { "application/problem+json": { "schema": { "allOf": [ { "$ref": "#/components/schemas/ProblemDetails" }, { "type": "object", "properties": { "errorCode": { "type": "string" }, "hint": { "type": "string" } } } ] }, "examples": { "badRequest": { "value": { "type": "about:blank", "title": "Invalid credentials", "status": 400, "detail": "Email or password format is invalid", "instance": "/api/auth/register", "errorCode": "AUTH_BAD_REQUEST", "hint": "Verify email and password fields" } } } } } },
-      "UsersUnauthorized": { "description": "Unauthorized", "content": { "application/problem+json": { "schema": { "allOf": [ { "$ref": "#/components/schemas/ProblemDetails" }, { "type": "object", "properties": { "errorCode": { "type": "string" }, "hint": { "type": "string" } } } ] } } } },
-      "JobsUnauthorized": { "description": "Unauthorized", "content": { "application/problem+json": { "schema": { "allOf": [ { "$ref": "#/components/schemas/ProblemDetails" }, { "type": "object", "properties": { "errorCode": { "type": "string" }, "hint": { "type": "string" } } } ] } } } },
-      "JobsForbidden": { "description": "Forbidden", "content": { "application/problem+json": { "schema": { "allOf": [ { "$ref": "#/components/schemas/ProblemDetails" }, { "type": "object", "properties": { "errorCode": { "type": "string" }, "hint": { "type": "string" } } } ] }, "examples": { "forbidden": { "value": { "type": "about:blank", "title": "Forbidden", "status": 403, "detail": "Email not verified or insufficient role", "instance": "/api/jobs", "errorCode": "JOBS_FORBIDDEN", "hint": "Verify email or use an employer account" } } } } } },
-      "JobsNotFound": { "description": "Not Found", "content": { "application/problem+json": { "schema": { "allOf": [ { "$ref": "#/components/schemas/ProblemDetails" }, { "type": "object", "properties": { "errorCode": { "type": "string" }, "hint": { "type": "string" } } } ] } } } },
-      "ApplicationsUnauthorized": { "description": "Unauthorized", "content": { "application/problem+json": { "schema": { "allOf": [ { "$ref": "#/components/schemas/ProblemDetails" }, { "type": "object", "properties": { "errorCode": { "type": "string" }, "hint": { "type": "string" } } } ] } } } },
-      "ApplicationsForbidden": { "description": "Forbidden", "content": { "application/problem+json": { "schema": { "allOf": [ { "$ref": "#/components/schemas/ProblemDetails" }, { "type": "object", "properties": { "errorCode": { "type": "string" }, "hint": { "type": "string" } } } ] } } } },
-      "ApplicationsNotFound": { "description": "Not Found", "content": { "application/problem+json": { "schema": { "allOf": [ { "$ref": "#/components/schemas/ProblemDetails" }, { "type": "object", "properties": { "errorCode": { "type": "string" }, "hint": { "type": "string" } } } ] } } } },
-      "ReviewsBadRequest": { "description": "Bad Request", "content": { "application/problem+json": { "schema": { "allOf": [ { "$ref": "#/components/schemas/ProblemDetails" }, { "type": "object", "properties": { "errorCode": { "type": "string" }, "hint": { "type": "string" } } } ] } } } },
-      "NotificationsUnauthorized": { "description": "Unauthorized", "content": { "application/problem+json": { "schema": { "allOf": [ { "$ref": "#/components/schemas/ProblemDetails" }, { "type": "object", "properties": { "errorCode": { "type": "string" }, "hint": { "type": "string" } } } ] } } } },
-      "ServerError": { "description": "Server Error", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetails" } } } }
+      "AuthUnauthorized": {
+        "description": "Unauthorized",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "hint": {
+                      "type": "string"
+                    }
+                  }
+                }
+              ]
+            },
+            "examples": {
+              "unauthorized": {
+                "value": {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Missing or invalid token. Please sign in again",
+                  "instance": "/api/auth/login",
+                  "errorCode": "AUTH_UNAUTHORIZED",
+                  "hint": "Send Authorization: Bearer <token>"
+                }
+              }
+            }
+          }
+        }
+      },
+      "AuthBadRequest": {
+        "description": "Bad Request",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "hint": {
+                      "type": "string"
+                    }
+                  }
+                }
+              ]
+            },
+            "examples": {
+              "badRequest": {
+                "value": {
+                  "type": "about:blank",
+                  "title": "Invalid credentials",
+                  "status": 400,
+                  "detail": "Email or password format is invalid",
+                  "instance": "/api/auth/register",
+                  "errorCode": "AUTH_BAD_REQUEST",
+                  "hint": "Verify email and password fields"
+                }
+              }
+            }
+          }
+        }
+      },
+      "UsersUnauthorized": {
+        "description": "Unauthorized",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "hint": {
+                      "type": "string"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "JobsUnauthorized": {
+        "description": "Unauthorized",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "hint": {
+                      "type": "string"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "JobsForbidden": {
+        "description": "Forbidden",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "hint": {
+                      "type": "string"
+                    }
+                  }
+                }
+              ]
+            },
+            "examples": {
+              "forbidden": {
+                "value": {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Email not verified or insufficient role",
+                  "instance": "/api/jobs",
+                  "errorCode": "JOBS_FORBIDDEN",
+                  "hint": "Verify email or use an employer account"
+                }
+              }
+            }
+          }
+        }
+      },
+      "JobsNotFound": {
+        "description": "Not Found",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "hint": {
+                      "type": "string"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "ApplicationsUnauthorized": {
+        "description": "Unauthorized",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "hint": {
+                      "type": "string"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "ApplicationsForbidden": {
+        "description": "Forbidden",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "hint": {
+                      "type": "string"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "ApplicationsNotFound": {
+        "description": "Not Found",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "hint": {
+                      "type": "string"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "ReviewsBadRequest": {
+        "description": "Bad Request",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "hint": {
+                      "type": "string"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "NotificationsUnauthorized": {
+        "description": "Unauthorized",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "hint": {
+                      "type": "string"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "ServerError": {
+        "description": "Server Error",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      }
     }
   },
   "paths": {
     "/api/auth/register": {
       "post": {
-        "tags": ["Auth"],
+        "tags": [
+          "Auth"
+        ],
         "operationId": "authRegister",
         "summary": "Register a new account and receive JWT",
         "description": "Requires email, password, and role flags (isWorker/isEmployer). At least one role must be true.",
@@ -142,55 +889,350 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "email": { "type": "string" },
-                  "password": { "type": "string" },
-                  "isWorker": { "type": "boolean" },
-                  "isEmployer": { "type": "boolean" }
+                  "email": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string"
+                  },
+                  "isWorker": {
+                    "type": "boolean"
+                  },
+                  "isEmployer": {
+                    "type": "boolean"
+                  }
                 },
-                "required": ["email", "password", "isWorker", "isEmployer"]
+                "required": [
+                  "email",
+                  "password",
+                  "isWorker",
+                  "isEmployer"
+                ]
               },
               "examples": {
-                "workerOnly": { "value": { "email": "user@example.com", "password": "pass12345", "isWorker": true, "isEmployer": false } }
+                "workerOnly": {
+                  "value": {
+                    "email": "user@example.com",
+                    "password": "pass12345",
+                    "isWorker": true,
+                    "isEmployer": false
+                  }
+                }
               }
             }
           }
         },
         "responses": {
-          "201": { "description": "Created", "headers": { "Location": { "schema": { "type": "string" } } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AuthPayload" } } } },
-          "400": { "$ref": "#/components/responses/AuthBadRequest" },
-          "500": { "$ref": "#/components/responses/ServerError" }
+          "201": {
+            "description": "Created",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthPayload"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/AuthBadRequest"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
         }
       }
     },
     "/api/auth/login": {
       "post": {
-        "tags": ["Auth"],
+        "tags": [
+          "Auth"
+        ],
         "operationId": "authLogin",
         "summary": "Login and receive JWT",
         "description": "Returns a JWT and basic user info on successful authentication.",
-        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "email": { "type": "string" }, "password": { "type": "string" } }, "required": ["email", "password"] }, "examples": { "login": { "value": { "email": "user@example.com", "password": "pass12345" } } } } } },
-        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AuthPayload" } } } }, "401": { "$ref": "#/components/responses/AuthUnauthorized" }, "500": { "$ref": "#/components/responses/ServerError" } }
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "email",
+                  "password"
+                ]
+              },
+              "examples": {
+                "login": {
+                  "value": {
+                    "email": "user@example.com",
+                    "password": "pass12345"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthPayload"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthUnauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
       }
     },
-    "/api/auth/send-verification": { "post": { "tags": ["Auth"], "operationId": "authSendVerification", "summary": "Send verification email", "security": [{ "BearerAuth": [] }], "responses": { "202": { "description": "Accepted", "content": { "application/json": { "schema": { "type": "object", "properties": { "success": { "type": "boolean" }, "link": { "type": "string" } } } } } }, "401": { "$ref": "#/components/responses/AuthUnauthorized" }, "500": { "$ref": "#/components/responses/ServerError" } } } },
-    "/api/auth/verify-email": { "get": { "tags": ["Auth"], "operationId": "authVerifyEmail", "summary": "Verify email with token", "parameters": [{ "name": "token", "in": "query", "required": true, "schema": { "type": "string" } }], "responses": { "204": { "description": "No Content" }, "400": { "$ref": "#/components/responses/AuthBadRequest" }, "500": { "$ref": "#/components/responses/ServerError" } } } },
-    "/api/users/me": { "get": { "tags": ["Users"], "operationId": "usersGetMe", "summary": "Get current user", "security": [{ "BearerAuth": [] }], "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UserMe" } } } }, "401": { "$ref": "#/components/responses/UsersUnauthorized" }, "500": { "$ref": "#/components/responses/ServerError" } } }, "patch": { "tags": ["Users"], "summary": "Update current user", "security": [{ "BearerAuth": [] }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "phone": { "type": "string" } } } } } }, "responses": { "200": { "description": "OK" }, "401": { "$ref": "#/components/responses/UsersUnauthorized" } } } },
+    "/api/auth/send-verification": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "operationId": "authSendVerification",
+        "summary": "Send verification email",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Accepted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "link": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthUnauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    },
+    "/api/auth/verify-email": {
+      "get": {
+        "tags": [
+          "Auth"
+        ],
+        "operationId": "authVerifyEmail",
+        "summary": "Verify email with token",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "$ref": "#/components/responses/AuthBadRequest"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    },
+    "/api/users/me": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "operationId": "usersGetMe",
+        "summary": "Get current user",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserMe"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/UsersUnauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Update current user",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "phone": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "$ref": "#/components/responses/UsersUnauthorized"
+          }
+        }
+      }
+    },
     "/api/jobs": {
       "get": {
-        "tags": ["Jobs"],
+        "tags": [
+          "Jobs"
+        ],
         "operationId": "jobsList",
         "summary": "List jobs",
         "parameters": [
-          { "name": "province", "in": "query", "schema": { "type": "string" } },
-          { "name": "city", "in": "query", "schema": { "type": "string" } },
-          { "name": "ward", "in": "query", "schema": { "type": "string" } },
-          { "name": "addressContains", "in": "query", "schema": { "type": "string" } },
-          { "name": "type", "in": "query", "schema": { "type": "string", "enum": ["physical_work","fnb","event","retail","others"] } },
-          { "name": "skills", "in": "query", "schema": { "type": "string" }, "description": "Comma separated" },
-          { "name": "date", "in": "query", "schema": { "type": "string", "format": "date" } },
-          { "name": "from", "in": "query", "schema": { "type": "string", "format": "date" } },
-          { "name": "to", "in": "query", "schema": { "type": "string", "format": "date" } },
-          { "name": "startDate", "in": "query", "schema": { "type": "string", "format": "date" } }
+          {
+            "name": "province",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "city",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ward",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "addressContains",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "physical_work",
+                "fnb",
+                "event",
+                "retail",
+                "others"
+              ]
+            }
+          },
+          {
+            "name": "skills",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Comma separated"
+          },
+          {
+            "name": "date",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "startDate",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
         ],
         "responses": {
           "200": {
@@ -200,20 +1242,59 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "items": { "type": "array", "items": { "$ref": "#/components/schemas/Job" } },
-                    "meta": { "type": "object", "properties": { "total": { "type": "integer" }, "page": { "type": "integer" }, "size": { "type": "integer" }, "filters": { "type": "object" }, "sort": { "type": "object" } } }
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Job"
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "total": {
+                          "type": "integer"
+                        },
+                        "page": {
+                          "type": "integer"
+                        },
+                        "size": {
+                          "type": "integer"
+                        },
+                        "filters": {
+                          "type": "object"
+                        },
+                        "sort": {
+                          "type": "object"
+                        }
+                      }
+                    }
                   }
                 }
               }
             }
           },
-          "500": { "description": "Server Error", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetails" } } } }
+          "500": {
+            "description": "Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
         }
       },
       "post": {
-        "tags": ["Jobs"],
+        "tags": [
+          "Jobs"
+        ],
         "summary": "Create job",
-        "security": [{ "BearerAuth": [] }],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -221,95 +1302,1471 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "title": { "type": "string" },
-                  "description": { "type": "string" },
-                  "location": { "$ref": "#/components/schemas/JobLocation" },
-                  "startDate": { "type": "string", "format": "date-time" },
-                  "durationDays": { "type": "integer" },
-                  "workerQuota": { "type": "integer" },
-                  "salary": { "type": "integer" },
-                  "type": { "type": "string", "enum": ["physical_work","fnb","event","retail","others"] },
-                  "sessions": { "type": "array", "items": { "$ref": "#/components/schemas/JobSession" } },
+                  "title": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "location": {
+                    "$ref": "#/components/schemas/JobLocation"
+                  },
+                  "startDate": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "durationDays": {
+                    "type": "integer"
+                  },
+                  "workerQuota": {
+                    "type": "integer"
+                  },
+                  "salary": {
+                    "type": "integer"
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "physical_work",
+                      "fnb",
+                      "event",
+                      "retail",
+                      "others"
+                    ]
+                  },
+                  "sessions": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/JobSession"
+                    }
+                  },
                   "skills": {
                     "type": "array",
                     "items": {
                       "oneOf": [
-                        { "type": "string" },
-                        { "type": "object", "properties": { "skillName": { "type": "string" } }, "required": ["skillName"] }
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "skillName": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "skillName"
+                          ]
+                        }
                       ]
                     }
                   }
                 },
-                "required": ["title","location","startDate","salary"]
+                "required": [
+                  "title",
+                  "location",
+                  "startDate",
+                  "salary"
+                ]
               }
             }
           }
         },
         "responses": {
-          "201": { "description": "Created", "headers": { "Location": { "schema": { "type": "string" } } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Job" } } } },
-          "401": { "$ref": "#/components/responses/JobsUnauthorized" },
-          "403": { "$ref": "#/components/responses/JobsForbidden" },
-          "500": { "$ref": "#/components/responses/ServerError" }
+          "201": {
+            "description": "Created",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Job"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/JobsUnauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/JobsForbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
         }
       }
     },
     "/api/jobs/all": {
       "get": {
-        "tags": ["Jobs"],
+        "tags": [
+          "Jobs"
+        ],
         "summary": "List open and full jobs",
         "description": "Returns only jobs whose computed status is 'open' or 'full'",
         "responses": {
           "200": {
             "description": "OK",
-            "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Job" } } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Job"
+                  }
+                }
+              }
+            }
           }
         }
       }
     },
     "/api/jobs/{id}": {
-      "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } } ],
-      "get": { "tags": ["Jobs"], "summary": "Get job by id", "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Job" } } } }, "404": { "$ref": "#/components/responses/JobsNotFound" } } },
-      "patch": {
-        "tags": ["Jobs"],
-        "summary": "Update job",
-        "security": [{ "BearerAuth": [] }],
-        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Job" } } } },
-        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Job" } } } }, "401": { "$ref": "#/components/responses/JobsUnauthorized" }, "403": { "$ref": "#/components/responses/JobsForbidden" }, "404": { "$ref": "#/components/responses/JobsNotFound" } }
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "integer"
+          }
+        }
+      ],
+      "get": {
+        "tags": [
+          "Jobs"
+        ],
+        "summary": "Get job by id",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Job"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/JobsNotFound"
+          }
+        }
       },
-      "delete": { "tags": ["Jobs"], "summary": "Delete job (by path id)", "security": [{ "BearerAuth": [] }], "responses": { "204": { "description": "No Content" }, "401": { "$ref": "#/components/responses/JobsUnauthorized" }, "403": { "$ref": "#/components/responses/JobsForbidden" }, "404": { "$ref": "#/components/responses/JobsNotFound" } } }
+      "patch": {
+        "tags": [
+          "Jobs"
+        ],
+        "summary": "Update job",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Job"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Job"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/JobsUnauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/JobsForbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/JobsNotFound"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Jobs"
+        ],
+        "summary": "Delete job (by path id)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "$ref": "#/components/responses/JobsUnauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/JobsForbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/JobsNotFound"
+          }
+        }
+      }
     },
-    
     "/api/jobs/{id}/location": {
-      "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } } ],
-      "get": { "tags": ["Jobs"], "summary": "Get job location", "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/JobLocation" } } } } } },
-      "patch": { "tags": ["Jobs"], "summary": "Update job location", "security": [{ "BearerAuth": [] }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/JobLocation" } } } }, "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/JobLocation" } } } }, "401": { "$ref": "#/components/responses/JobsUnauthorized" }, "403": { "$ref": "#/components/responses/JobsForbidden" } } }
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "integer"
+          }
+        }
+      ],
+      "get": {
+        "tags": [
+          "Jobs"
+        ],
+        "summary": "Get job location",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobLocation"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Jobs"
+        ],
+        "summary": "Update job location",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JobLocation"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobLocation"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/JobsUnauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/JobsForbidden"
+          }
+        }
+      }
     },
     "/api/jobs/{id}/sessions": {
-      "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } } ],
-      "post": { "tags": ["Jobs"], "summary": "Create job session", "security": [{ "BearerAuth": [] }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "sessionDate": { "type": "string", "format": "date-time" }, "startTime": { "type": "string", "format": "date-time" }, "endTime": { "type": "string", "format": "date-time" } } } } } }, "responses": { "201": { "description": "Created" }, "401": { "$ref": "#/components/responses/JobsUnauthorized" }, "403": { "$ref": "#/components/responses/JobsForbidden" } } },
-      "get": { "tags": ["Jobs"], "summary": "List job sessions", "responses": { "200": { "description": "OK" } } }
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "integer"
+          }
+        }
+      ],
+      "post": {
+        "tags": [
+          "Jobs"
+        ],
+        "summary": "Create job session",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "sessionDate": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "startTime": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "endTime": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "$ref": "#/components/responses/JobsUnauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/JobsForbidden"
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Jobs"
+        ],
+        "summary": "List job sessions",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
     },
     "/api/jobs/{id}/skills": {
-      "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } } ],
-      "post": { "tags": ["Jobs"], "summary": "Add required skills", "security": [{ "BearerAuth": [] }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "skills": { "type": "array", "items": { "type": "string" } } } } } } }, "responses": { "201": { "description": "Created" }, "401": { "$ref": "#/components/responses/JobsUnauthorized" }, "403": { "$ref": "#/components/responses/JobsForbidden" } } }
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "integer"
+          }
+        }
+      ],
+      "post": {
+        "tags": [
+          "Jobs"
+        ],
+        "summary": "Add required skills",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "skills": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "$ref": "#/components/responses/JobsUnauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/JobsForbidden"
+          }
+        }
+      }
     },
-    "/api/applications": { "post": { "tags": ["Applications"], "summary": "Apply for a job", "security": [{ "BearerAuth": [] }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "jobId": { "type": "integer" } }, "required": ["jobId"] } } } }, "responses": { "201": { "description": "Created", "content": { "application/json": { "schema": { "type": "object", "properties": { "application": { "type": "object" }, "employee": { "$ref": "#/components/schemas/UserMe" } } } } } }, "401": { "$ref": "#/components/responses/ApplicationsUnauthorized" }, "403": { "$ref": "#/components/responses/ApplicationsForbidden" }, "409": { "description": "Conflict (job not open/full)", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetails" } } } } } } },
-    "/api/applications/accept": { "post": { "tags": ["Applications"], "summary": "Accept application", "security": [{ "BearerAuth": [] }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "applicationId": { "type": "integer" } }, "required": ["applicationId"] } } } }, "responses": { "200": { "description": "OK" }, "401": { "$ref": "#/components/responses/ApplicationsUnauthorized" }, "403": { "$ref": "#/components/responses/ApplicationsForbidden" }, "404": { "$ref": "#/components/responses/ApplicationsNotFound" } } } },
-    "/api/applications/reject": { "post": { "tags": ["Applications"], "summary": "Reject application", "security": [{ "BearerAuth": [] }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "applicationId": { "type": "integer" } }, "required": ["applicationId"] } } } }, "responses": { "200": { "description": "OK" }, "401": { "$ref": "#/components/responses/ApplicationsUnauthorized" }, "403": { "$ref": "#/components/responses/ApplicationsForbidden" }, "404": { "$ref": "#/components/responses/ApplicationsNotFound" } } } },
-    "/api/applications/complete": { "post": { "tags": ["Applications"], "summary": "Employer marks job complete for worker", "security": [{ "BearerAuth": [] }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "jobId": { "type": "integer" }, "workerId": { "type": "integer" } }, "required": ["jobId", "workerId"] } } } }, "responses": { "200": { "description": "OK" }, "401": { "$ref": "#/components/responses/ApplicationsUnauthorized" }, "403": { "$ref": "#/components/responses/ApplicationsForbidden" }, "409": { "description": "Conflict", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetails" } } } } } } },
-    "/api/applications/complete-paid": { "post": { "tags": ["Applications"], "summary": "Worker confirms payment received", "security": [{ "BearerAuth": [] }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "applicationId": { "type": "integer" } }, "required": ["applicationId"] } } } }, "responses": { "200": { "description": "OK" }, "401": { "$ref": "#/components/responses/ApplicationsUnauthorized" }, "403": { "$ref": "#/components/responses/ApplicationsForbidden" }, "409": { "description": "Conflict", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetails" } } } } } } },
-    "/api/reviews": { "post": { "tags": ["Reviews"], "summary": "Create review", "security": [{ "BearerAuth": [] }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "applicationId": { "type": "integer" }, "revieweeId": { "type": "integer" }, "rating": { "type": "integer" }, "comment": { "type": "string" } }, "required": ["applicationId", "revieweeId", "rating"] } } } }, "responses": { "201": { "description": "Created" }, "400": { "$ref": "#/components/responses/ReviewsBadRequest" } } } },
-    "/api/reviews/{userId}": { "parameters": [ { "name": "userId", "in": "path", "required": true, "schema": { "type": "integer" } } ], "get": { "tags": ["Reviews"], "summary": "List reviews for user", "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "type": "array", "items": { "type": "object", "properties": { "id": { "type": "integer" }, "jobId": { "type": "integer" }, "reviewerId": { "type": "integer" }, "revieweeId": { "type": "integer" }, "rating": { "type": "integer" }, "comment": { "type": "string" }, "createdAt": { "type": "string", "format": "date-time" }, "reviewer": { "type": "object", "properties": { "id": { "type": "integer" }, "email": { "type": "string" } } }, "job": { "type": "object", "properties": { "id": { "type": "integer" }, "title": { "type": "string" } } } } } } } } } } }},
-    "/api/notifications": { "get": { "tags": ["Notifications"], "summary": "List notifications", "security": [{ "BearerAuth": [] }], "responses": { "200": { "description": "OK" }, "401": { "$ref": "#/components/responses/NotificationsUnauthorized" } } } },
-    "/api/profiles/employee": { "post": { "tags": ["Profiles"], "summary": "Create employee profile", "security": [{ "BearerAuth": [] }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "bio": { "type": "string" }, "skills": { "type": "object" }, "dob": { "type": "string", "format": "date-time" }, "gender": { "type": "string" } } } } } }, "responses": { "201": { "description": "Created" }, "401": { "$ref": "#/components/responses/UsersUnauthorized" } } }, "patch": { "tags": ["Profiles"], "summary": "Update employee profile", "security": [{ "BearerAuth": [] }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "bio": { "type": "string" }, "skills": { "type": "object" }, "dob": { "type": "string", "format": "date-time" }, "gender": { "type": "string" } } } } } }, "responses": { "200": { "description": "OK" }, "401": { "$ref": "#/components/responses/UsersUnauthorized" } } } },
-    "/api/profiles/employee/{userId}": { "parameters": [ { "name": "userId", "in": "path", "required": true, "schema": { "type": "integer" } } ], "get": { "tags": ["Profiles"], "summary": "Get employee profile by user id", "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "type": "object", "properties": { "id": { "type": "integer" }, "userId": { "type": "integer" }, "bio": { "type": "string" }, "skills": { "type": "object" }, "dob": { "type": "string", "format": "date-time" }, "gender": { "type": "string" } } } } } }, "404": { "$ref": "#/components/responses/JobsNotFound" } } } },
-    "/api/profiles/employer": { "post": { "tags": ["Profiles"], "summary": "Create employer profile", "security": [{ "BearerAuth": [] }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "companyName": { "type": "string" }, "companyAddress": { "type": "string" } }, "required": ["companyName"] } } } }, "responses": { "201": { "description": "Created" }, "401": { "$ref": "#/components/responses/UsersUnauthorized" } } }, "patch": { "tags": ["Profiles"], "summary": "Update employer profile", "security": [{ "BearerAuth": [] }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "companyName": { "type": "string" }, "companyAddress": { "type": "string" } } } } } }, "responses": { "200": { "description": "OK" }, "401": { "$ref": "#/components/responses/UsersUnauthorized" } } } },
-    "/api/profiles/employer/{userId}": { "parameters": [ { "name": "userId", "in": "path", "required": true, "schema": { "type": "integer" } } ], "get": { "tags": ["Profiles"], "summary": "Get employer profile by user id", "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "type": "object", "properties": { "id": { "type": "integer" }, "userId": { "type": "integer" }, "companyName": { "type": "string" }, "companyAddress": { "type": "string" } } } } } }, "404": { "$ref": "#/components/responses/JobsNotFound" } } } },
-    "/api/profiles/employee/image": { "post": { "tags": ["Profiles"], "summary": "Upload employee image", "security": [{ "BearerAuth": [] }], "requestBody": { "required": true, "content": { "multipart/form-data": { "schema": { "type": "object", "properties": { "file": { "type": "string", "format": "binary" }, "kind": { "type": "string", "enum": ["avatar","other"] }, "setPrimary": { "type": "boolean" } }, "required": ["file"] } } } }, "responses": { "201": { "description": "Created" }, "401": { "$ref": "#/components/responses/UsersUnauthorized" } } }, "get": { "tags": ["Profiles"], "summary": "Get employee primary image", "security": [{ "BearerAuth": [] }], "parameters": [ { "name": "kind", "in": "query", "schema": { "type": "string", "enum": ["avatar","other"] } } ], "responses": { "200": { "description": "OK", "content": { "application/octet-stream": { "schema": { "type": "string", "format": "binary" } } } }, "404": { "$ref": "#/components/responses/JobsNotFound" } } } },
-    "/api/profiles/employee/image/{id}/primary": { "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } } ], "post": { "tags": ["Profiles"], "summary": "Set employee image as primary", "security": [{ "BearerAuth": [] }], "responses": { "200": { "description": "OK" } } } },
-    "/api/profiles/employee/image/{id}": { "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } } ], "delete": { "tags": ["Profiles"], "summary": "Delete employee image", "security": [{ "BearerAuth": [] }], "responses": { "200": { "description": "OK" } } } },
-    "/api/profiles/employer/image": { "post": { "tags": ["Profiles"], "summary": "Upload employer image", "security": [{ "BearerAuth": [] }], "requestBody": { "required": true, "content": { "multipart/form-data": { "schema": { "type": "object", "properties": { "file": { "type": "string", "format": "binary" }, "kind": { "type": "string", "enum": ["company_logo","avatar","other"] }, "setPrimary": { "type": "boolean" } }, "required": ["file"] } } } }, "responses": { "201": { "description": "Created" }, "401": { "$ref": "#/components/responses/UsersUnauthorized" } } }, "get": { "tags": ["Profiles"], "summary": "Get employer primary image", "security": [{ "BearerAuth": [] }], "parameters": [ { "name": "kind", "in": "query", "schema": { "type": "string", "enum": ["company_logo","avatar","other"] } } ], "responses": { "200": { "description": "OK", "content": { "application/octet-stream": { "schema": { "type": "string", "format": "binary" } } } }, "404": { "$ref": "#/components/responses/JobsNotFound" } } } },
-    "/api/profiles/employer/image/{id}/primary": { "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } } ], "post": { "tags": ["Profiles"], "summary": "Set employer image as primary", "security": [{ "BearerAuth": [] }], "responses": { "200": { "description": "OK" } } } },
-    "/api/profiles/employer/image/{id}": { "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } } ], "delete": { "tags": ["Profiles"], "summary": "Delete employer image", "security": [{ "BearerAuth": [] }], "responses": { "200": { "description": "OK" } } } }
+    "/api/applications": {
+      "get": {
+        "tags": [
+          "Applications"
+        ],
+        "summary": "List applications for current user",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/JobApplicationFull"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/ApplicationsUnauthorized"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Applications"
+        ],
+        "summary": "Apply for a job",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "jobId": {
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "jobId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "application": {
+                      "type": "object"
+                    },
+                    "employee": {
+                      "$ref": "#/components/schemas/UserMe"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/ApplicationsUnauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/ApplicationsForbidden"
+          },
+          "409": {
+            "description": "Conflict (job not open/full)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/applications/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "integer"
+          }
+        }
+      ],
+      "get": {
+        "tags": [
+          "Applications"
+        ],
+        "summary": "Get application detail by id",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobApplicationFull"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/ApplicationsUnauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/ApplicationsForbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApplicationsNotFound"
+          }
+        }
+      }
+    },
+    "/api/applications/accept": {
+      "post": {
+        "tags": [
+          "Applications"
+        ],
+        "summary": "Accept application",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "applicationId": {
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "applicationId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "$ref": "#/components/responses/ApplicationsUnauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/ApplicationsForbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApplicationsNotFound"
+          }
+        }
+      }
+    },
+    "/api/applications/reject": {
+      "post": {
+        "tags": [
+          "Applications"
+        ],
+        "summary": "Reject application",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "applicationId": {
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "applicationId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "$ref": "#/components/responses/ApplicationsUnauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/ApplicationsForbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApplicationsNotFound"
+          }
+        }
+      }
+    },
+    "/api/applications/complete": {
+      "post": {
+        "tags": [
+          "Applications"
+        ],
+        "summary": "Employer marks job complete for worker",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "jobId": {
+                    "type": "integer"
+                  },
+                  "workerId": {
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "jobId",
+                  "workerId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "$ref": "#/components/responses/ApplicationsUnauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/ApplicationsForbidden"
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/applications/complete-paid": {
+      "post": {
+        "tags": [
+          "Applications"
+        ],
+        "summary": "Worker confirms payment received",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "applicationId": {
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "applicationId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "$ref": "#/components/responses/ApplicationsUnauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/ApplicationsForbidden"
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/reviews": {
+      "post": {
+        "tags": [
+          "Reviews"
+        ],
+        "summary": "Create review",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "applicationId": {
+                    "type": "integer"
+                  },
+                  "revieweeId": {
+                    "type": "integer"
+                  },
+                  "rating": {
+                    "type": "integer"
+                  },
+                  "comment": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "applicationId",
+                  "revieweeId",
+                  "rating"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created"
+          },
+          "400": {
+            "$ref": "#/components/responses/ReviewsBadRequest"
+          }
+        }
+      }
+    },
+    "/api/reviews/{userId}": {
+      "parameters": [
+        {
+          "name": "userId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "integer"
+          }
+        }
+      ],
+      "get": {
+        "tags": [
+          "Reviews"
+        ],
+        "summary": "List reviews for user",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "integer"
+                      },
+                      "jobId": {
+                        "type": "integer"
+                      },
+                      "reviewerId": {
+                        "type": "integer"
+                      },
+                      "revieweeId": {
+                        "type": "integer"
+                      },
+                      "rating": {
+                        "type": "integer"
+                      },
+                      "comment": {
+                        "type": "string"
+                      },
+                      "createdAt": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "reviewer": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "integer"
+                          },
+                          "email": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "job": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "integer"
+                          },
+                          "title": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/notifications": {
+      "get": {
+        "tags": [
+          "Notifications"
+        ],
+        "summary": "List notifications",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "$ref": "#/components/responses/NotificationsUnauthorized"
+          }
+        }
+      }
+    },
+    "/api/profiles/employee": {
+      "post": {
+        "tags": [
+          "Profiles"
+        ],
+        "summary": "Create employee profile",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "bio": {
+                    "type": "string"
+                  },
+                  "skills": {
+                    "type": "object"
+                  },
+                  "dob": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "gender": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "$ref": "#/components/responses/UsersUnauthorized"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Profiles"
+        ],
+        "summary": "Update employee profile",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "bio": {
+                    "type": "string"
+                  },
+                  "skills": {
+                    "type": "object"
+                  },
+                  "dob": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "gender": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "$ref": "#/components/responses/UsersUnauthorized"
+          }
+        }
+      }
+    },
+    "/api/profiles/employee/{userId}": {
+      "parameters": [
+        {
+          "name": "userId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "integer"
+          }
+        }
+      ],
+      "get": {
+        "tags": [
+          "Profiles"
+        ],
+        "summary": "Get employee profile by user id",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer"
+                    },
+                    "userId": {
+                      "type": "integer"
+                    },
+                    "bio": {
+                      "type": "string"
+                    },
+                    "skills": {
+                      "type": "object"
+                    },
+                    "dob": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "gender": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/JobsNotFound"
+          }
+        }
+      }
+    },
+    "/api/profiles/employer": {
+      "post": {
+        "tags": [
+          "Profiles"
+        ],
+        "summary": "Create employer profile",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "companyName": {
+                    "type": "string"
+                  },
+                  "companyAddress": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "companyName"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "$ref": "#/components/responses/UsersUnauthorized"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Profiles"
+        ],
+        "summary": "Update employer profile",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "companyName": {
+                    "type": "string"
+                  },
+                  "companyAddress": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "$ref": "#/components/responses/UsersUnauthorized"
+          }
+        }
+      }
+    },
+    "/api/profiles/employer/{userId}": {
+      "parameters": [
+        {
+          "name": "userId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "integer"
+          }
+        }
+      ],
+      "get": {
+        "tags": [
+          "Profiles"
+        ],
+        "summary": "Get employer profile by user id",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer"
+                    },
+                    "userId": {
+                      "type": "integer"
+                    },
+                    "companyName": {
+                      "type": "string"
+                    },
+                    "companyAddress": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/JobsNotFound"
+          }
+        }
+      }
+    },
+    "/api/profiles/employee/image": {
+      "post": {
+        "tags": [
+          "Profiles"
+        ],
+        "summary": "Upload employee image",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "avatar",
+                      "other"
+                    ]
+                  },
+                  "setPrimary": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "file"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "$ref": "#/components/responses/UsersUnauthorized"
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Profiles"
+        ],
+        "summary": "Get employee primary image",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "kind",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "avatar",
+                "other"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/JobsNotFound"
+          }
+        }
+      }
+    },
+    "/api/profiles/employee/image/{id}/primary": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "integer"
+          }
+        }
+      ],
+      "post": {
+        "tags": [
+          "Profiles"
+        ],
+        "summary": "Set employee image as primary",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/profiles/employee/image/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "integer"
+          }
+        }
+      ],
+      "delete": {
+        "tags": [
+          "Profiles"
+        ],
+        "summary": "Delete employee image",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/profiles/employer/image": {
+      "post": {
+        "tags": [
+          "Profiles"
+        ],
+        "summary": "Upload employer image",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "company_logo",
+                      "avatar",
+                      "other"
+                    ]
+                  },
+                  "setPrimary": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "file"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "$ref": "#/components/responses/UsersUnauthorized"
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Profiles"
+        ],
+        "summary": "Get employer primary image",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "kind",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "company_logo",
+                "avatar",
+                "other"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/JobsNotFound"
+          }
+        }
+      }
+    },
+    "/api/profiles/employer/image/{id}/primary": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "integer"
+          }
+        }
+      ],
+      "post": {
+        "tags": [
+          "Profiles"
+        ],
+        "summary": "Set employer image as primary",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/profiles/employer/image/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "integer"
+          }
+        }
+      ],
+      "delete": {
+        "tags": [
+          "Profiles"
+        ],
+        "summary": "Delete employer image",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    }
   }
 }

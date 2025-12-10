@@ -84,23 +84,40 @@ export default function EmployerJobDetailsPage() {
 
       // Check ownership
       const currentUser = authService.getCurrentUser();
-      if (currentUser && (
-          (jobData.employerId && String(jobData.employerId) === String(currentUser.id)) ||
-          (jobData.employer?.id && String(jobData.employer.id) === String(currentUser.id))
-      )) {
-          setIsOwner(true);
-      }
+      const isOwnerCheck = currentUser && (
+        (jobData.employerId && String(jobData.employerId) === String(currentUser.id)) ||
+        (jobData.employer?.id && String(jobData.employer.id) === String(currentUser.id))
+      );
 
-      // Get applications from job data
-      const apps: Application[] = jobData.applications?.map(app => ({
-        id: app.id,
-        workerId: app.workerId,
-        workerName: app.worker?.name,
-        workerEmail: app.worker?.email,
-        status: app.status,
-        appliedAt: app.createdAt || new Date().toISOString(),
-      })) || [];
-      setApplications(apps);
+      if (isOwnerCheck) {
+        setIsOwner(true);
+
+        // Fetch applications from API for this job (only for owner)
+        try {
+          const jobApps = await applicationsService.getByJobId(jobId);
+          const apps: Application[] = jobApps.map(app => ({
+            id: app.id,
+            workerId: app.workerId,
+            workerName: app.worker?.email?.split('@')[0], // Use email prefix as name
+            workerEmail: app.worker?.email,
+            status: app.status,
+            appliedAt: app.appliedAt || new Date().toISOString(),
+          }));
+          setApplications(apps);
+        } catch (appErr) {
+          console.error("Error fetching applications:", appErr);
+          // Fallback to jobData.applications if API call fails
+          const apps: Application[] = jobData.applications?.map(app => ({
+            id: app.id,
+            workerId: app.workerId,
+            workerName: app.worker?.name,
+            workerEmail: app.worker?.email,
+            status: app.status,
+            appliedAt: app.createdAt || new Date().toISOString(),
+          })) || [];
+          setApplications(apps);
+        }
+      }
     } catch (err) {
       console.error("Error fetching job:", err);
       setError("Failed to load job details");
@@ -155,7 +172,7 @@ export default function EmployerJobDetailsPage() {
 
   const handleDelete = async () => {
     if (!job) return;
-    
+
     setIsDeleting(true);
     try {
       await jobsService.deleteJob(job.id);

@@ -19,12 +19,53 @@ export interface Application {
     worker?: UserProfile;
 }
 
+// Full application response from GET /api/applications (matches OpenAPI JobApplicationFull schema)
+export interface JobApplicationFull {
+    id: number;
+    jobId: number;
+    workerId: number;
+    status: ApplicationStatus;
+    isComplete: boolean;
+    isPaid: boolean;
+    appliedAt: string;
+    job?: {
+        id: number;
+        title: string;
+        employerId: number;
+        startDate: string;
+        durationDays: number;
+        salary: number;
+    };
+    worker?: {
+        id: number;
+        email: string;
+    };
+}
+
 export interface ApplyResponse {
     application: Application;
     employee: UserProfile;
 }
 
 export const applicationsService = {
+    /**
+     * Get all applications for current user
+     * GET /api/applications
+     * Returns applications where current user is either the worker or the employer
+     */
+    async getAll(): Promise<JobApplicationFull[]> {
+        const response = await api.get<JobApplicationFull[]>('/api/applications');
+        return response.data;
+    },
+
+    /**
+     * Get applications by job ID (filtered from getAll)
+     */
+    async getByJobId(jobId: number): Promise<JobApplicationFull[]> {
+        const allApplications = await this.getAll();
+        return allApplications.filter(app => app.jobId === jobId);
+    },
+
     /**
      * Apply for a job
      * POST /api/applications
