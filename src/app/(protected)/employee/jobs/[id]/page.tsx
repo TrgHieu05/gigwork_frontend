@@ -56,19 +56,38 @@ export default function EmployeeJobDetailsPage() {
     const [error, setError] = useState<string | null>(null);
     const [isApplying, setIsApplying] = useState(false);
     const [hasApplied, setHasApplied] = useState(false);
+    const [applicationStatus, setApplicationStatus] = useState<string>("");
     const [isSaved, setIsSaved] = useState(false);
     const [showSuccessModal, setShowSuccessModal] = useState(false);
 
     useEffect(() => {
-        const fetchJob = async () => {
+        const fetchData = async () => {
             setIsLoading(true);
             setError(null);
             try {
                 const jobId = Number(params.id);
-                const jobData = await jobsService.getJob(jobId);
+                
+                // Fetch job details and user profile in parallel
+                const [jobData, userProfile] = await Promise.all([
+                    jobsService.getJob(jobId),
+                    profileService.getCurrentUser().catch(() => null)
+                ]);
+                
                 setJob(jobData);
+
+                // Check if user has applied for this job
+                if (userProfile && userProfile.recentApplications) {
+                    const existingApp = userProfile.recentApplications.find(
+                        app => app.jobId === jobId
+                    );
+                    
+                    if (existingApp) {
+                        setHasApplied(true);
+                        setApplicationStatus(existingApp.status);
+                    }
+                }
             } catch (err) {
-                console.error("Error fetching job:", err);
+                console.error("Error fetching data:", err);
                 setError("Failed to load job details");
             } finally {
                 setIsLoading(false);
@@ -76,7 +95,7 @@ export default function EmployeeJobDetailsPage() {
         };
 
         if (params.id) {
-            fetchJob();
+            fetchData();
         }
     }, [params.id]);
 
@@ -87,6 +106,7 @@ export default function EmployeeJobDetailsPage() {
         try {
             await applicationsService.apply(job.id);
             setHasApplied(true);
+            setApplicationStatus("pending");
             setShowSuccessModal(true);
         } catch (err: unknown) {
             console.error("Error applying:", err);
@@ -154,6 +174,41 @@ export default function EmployeeJobDetailsPage() {
     const endDate = new Date(startDate);
     endDate.setDate(endDate.getDate() + job.durationDays);
     const status = statusConfig[job.status] || statusConfig.open;
+
+    const getStatusButton = () => {
+        if (!hasApplied) return null;
+
+        switch (applicationStatus.toLowerCase()) {
+            case "accepted":
+                return (
+                    <Button disabled className="w-full bg-green-100 text-green-700 hover:bg-green-100 border-green-200">
+                        <CheckCircle className="h-4 w-4 mr-2" />
+                        Application Accepted
+                    </Button>
+                );
+            case "rejected":
+                return (
+                    <Button disabled className="w-full bg-red-100 text-red-700 hover:bg-red-100 border-red-200">
+                        <CheckCircle className="h-4 w-4 mr-2" />
+                        Application Rejected
+                    </Button>
+                );
+            case "completed":
+                return (
+                    <Button disabled className="w-full bg-blue-100 text-blue-700 hover:bg-blue-100 border-blue-200">
+                        <CheckCircle className="h-4 w-4 mr-2" />
+                        Job Completed
+                    </Button>
+                );
+            default: // pending or others
+                return (
+                    <Button disabled className="w-full bg-yellow-100 text-yellow-700 hover:bg-yellow-100 border-yellow-200">
+                        <CheckCircle className="h-4 w-4 mr-2" />
+                        Application Pending
+                    </Button>
+                );
+        }
+    };
 
     return (
         <div className="h-full p-6 overflow-auto">
@@ -276,10 +331,7 @@ export default function EmployeeJobDetailsPage() {
                                 </div>
 
                                 {hasApplied ? (
-                                    <Button disabled className="w-full">
-                                        <CheckCircle className="h-4 w-4 mr-2" />
-                                        Applied
-                                    </Button>
+                                    getStatusButton()
                                 ) : job.status === "open" ? (
                                     <Button
                                         className="w-full"
