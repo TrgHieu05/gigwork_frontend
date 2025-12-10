@@ -9,6 +9,7 @@ import { Loader2 } from "lucide-react";
 import { EmployeeJobCard, type EmployeeJob } from "@/components/feature/employee/EmployeeJobCard";
 import { EmployeeApplicationCard, type EmployeeApplication } from "@/components/feature/employee/EmployeeApplicationCard";
 import { profileService } from "@/services/profile";
+import { jobsService, Job } from "@/services/jobs";
 
 export default function EmployeeHistoryPage() {
     const [activeTab, setActiveTab] = useState("jobs");
@@ -23,6 +24,30 @@ export default function EmployeeHistoryPage() {
             try {
                 const profile = await profileService.getCurrentUser();
 
+                // Fetch job details to get company names
+                const jobIds = new Set<number>();
+                profile.recentApplications?.forEach(a => {
+                    if (a.jobId) jobIds.add(a.jobId);
+                });
+
+                const jobDetailsMap = new Map<number, Job>();
+                if (jobIds.size > 0) {
+                    const jobsPromises = Array.from(jobIds).map(async (id) => {
+                        try {
+                            const job = await jobsService.getJob(id);
+                            return job;
+                        } catch (e) {
+                            console.error(`Failed to fetch job ${id}`, e);
+                            return null;
+                        }
+                    });
+                    
+                    const jobs = await Promise.all(jobsPromises);
+                    jobs.forEach(job => {
+                        if (job) jobDetailsMap.set(job.id, job);
+                    });
+                }
+
                 // Transform applications from profile
                 if (profile.recentApplications) {
                     const apps: EmployeeApplication[] = profile.recentApplications.map((app) => {
@@ -35,10 +60,13 @@ export default function EmployeeHistoryPage() {
                             cancelled: "Cancelled",
                         };
 
+                        const jobDetail = app.jobId ? jobDetailsMap.get(app.jobId) : null;
+                        const companyName = jobDetail?.companyName || jobDetail?.employer?.employerProfile?.companyName || jobDetail?.employer?.companyName || app.companyName || "Unknown Company";
+
                         return {
                             id: String(app.applicationId),
-                            title: app.jobTitle || "Unknown Job",
-                            company: app.companyName || "Unknown Company",
+                            title: app.jobTitle || jobDetail?.title || "Unknown Job",
+                            company: companyName,
                             time: app.appliedAt ? new Date(app.appliedAt).toLocaleDateString() : "Recently",
                             status: statusMap[app.status] || "Pending",
                         };
@@ -49,16 +77,21 @@ export default function EmployeeHistoryPage() {
                     // Filter completed jobs from applications
                     const completed: EmployeeJob[] = profile.recentApplications
                         .filter((app) => app.status === "completed")
-                        .map((app) => ({
-                            id: String(app.applicationId),
-                            title: app.jobTitle || "Unknown Job",
-                            company: app.companyName || "Unknown Company",
-                            location: "Unknown Location",
-                            completedDate: app.appliedAt ? new Date(app.appliedAt).toLocaleDateString() : "Recently",
-                            duration: "N/A",
-                            earned: "N/A",
-                            rating: 0,
-                        }));
+                        .map((app) => {
+                            const jobDetail = app.jobId ? jobDetailsMap.get(app.jobId) : null;
+                            const companyName = jobDetail?.companyName || jobDetail?.employer?.employerProfile?.companyName || jobDetail?.employer?.companyName || app.companyName || "Unknown Company";
+                            
+                            return {
+                                id: String(app.applicationId),
+                                title: app.jobTitle || jobDetail?.title || "Unknown Job",
+                                company: companyName,
+                                location: "Unknown Location",
+                                completedDate: app.appliedAt ? new Date(app.appliedAt).toLocaleDateString() : "Recently",
+                                duration: jobDetail?.durationDays ? `${jobDetail.durationDays} days` : "N/A",
+                                earned: jobDetail?.salary ? `${jobDetail.salary.toLocaleString()} VND` : "N/A",
+                                rating: 0,
+                            };
+                        });
 
                     setCompletedJobs(completed);
                 }

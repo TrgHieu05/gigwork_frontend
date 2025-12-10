@@ -66,9 +66,33 @@ export default function MyJobsPage() {
 
             // Fetch all jobs from API
             const response = await jobsService.listJobs();
-            const transformedJobs = response.items
-                .filter(job => job.employerId === currentUser.id)
-                .map(transformApiJob);
+            
+            // Note: Since listJobs might not return applications count for all jobs,
+            // we should ideally have the backend include it. 
+            // If the backend list endpoint doesn't return applications, 
+            // we have to be careful. Assuming it does or we accept 0 for now unless we fetch details.
+            // But based on previous issue, it seems applications array might be missing or empty in list response if not eager loaded.
+            // Let's verify if we need to fetch individual job details to get accurate count.
+            // However, fetching details for ALL jobs is expensive.
+            // Let's assume for now we use what we have, but if count is 0, it might be the API limitation.
+            // Actually, to fix "0 applicants" when there ARE applicants, it means listJobs response lacks this data.
+            // We can try to fetch details for the filtered jobs (usually small number for a single employer).
+            
+            const myJobs = response.items.filter(job => job.employerId === currentUser.id);
+            
+            // Fetch details for each job to ensure we get applications list
+            const detailedJobs = await Promise.all(
+                myJobs.map(async (job) => {
+                    try {
+                        return await jobsService.getJob(job.id);
+                    } catch (e) {
+                        console.error(`Failed to fetch details for job ${job.id}`, e);
+                        return job; // Fallback to list version
+                    }
+                })
+            );
+
+            const transformedJobs = detailedJobs.map(transformApiJob);
 
             setJobs(transformedJobs);
         } catch (error) {
