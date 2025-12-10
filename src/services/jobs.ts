@@ -35,6 +35,7 @@ export interface Job {
     id: number;
     title: string;
     description: string;
+    companyName?: string;
     locationId?: number | null;
     locationDetail?: JobLocation;
     // Keep location for backward compatibility - will be populated by formatJobLocation
@@ -57,6 +58,9 @@ export interface Job {
         id: number;
         email: string;
         companyName?: string;
+        employerProfile?: {
+            companyName?: string;
+        };
     };
 }
 

@@ -55,6 +55,7 @@ export interface UserProfile {
         applicationId: number;
         jobId?: number;
         jobTitle?: string;
+        companyName?: string;
         status: string;
         appliedAt: string;
     }[];

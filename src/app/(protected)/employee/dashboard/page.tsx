@@ -65,8 +65,7 @@ export default function EmployeeDashboard() {
                 // Transform recent applications from API with enriched data
                 const apps: EmployeeApplication[] = profile.recentApplications?.map((app) => {
                     const jobDetail = app.jobId ? jobDetailsMap.get(app.jobId) : null;
-                    const companyName = jobDetail?.employer?.companyName || 
-                                       (jobDetail?.employer?.email ? jobDetail.employer.email.split('@')[0] : "Employer");
+                    const companyName = jobDetail?.companyName || jobDetail?.employer?.employerProfile?.companyName || jobDetail?.employer?.companyName || "Employer";
                     
                     return {
                         id: String(app.applicationId),
@@ -81,18 +80,45 @@ export default function EmployeeDashboard() {
                 }) || [];
                 setRecentApplications(apps);
 
+                // Calculate stats from recent jobs
+                const now = new Date();
+                const currentMonth = now.getMonth();
+                const currentYear = now.getFullYear();
+
+                const completedJobs = profile.recentJobs?.filter(j => j.status === 'completed' || j.status === 'finished') || [];
+                
+                // Calculate earned amount from completed jobs
+                // Note: This is an approximation based on recent jobs. 
+                // For accurate total, backend should provide this in UserProfile.
+                const earnedAmount = completedJobs.reduce((sum, job) => sum + (job.salary || 0), 0);
+                
+                // Calculate completed jobs this month
+                const completedThisMonthCount = completedJobs.filter(job => {
+                    // Use startDate as proxy for completion date if endDate not available
+                    // Ideally check job.endDate or application.completedAt
+                    const date = new Date(job.startDate); 
+                    return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
+                }).length;
+
                 // Transform recent jobs from API with enriched data
-                const jobs: EmployeeJob[] = profile.recentJobs?.map((job) => {
+                // Filter for active jobs only (not completed/cancelled)
+                const activeJobsList: EmployeeJob[] = profile.recentJobs
+                    ?.filter(job => job.status !== 'completed' && job.status !== 'cancelled' && job.status !== 'finished')
+                    .map((job) => {
                     const jobDetail = jobDetailsMap.get(job.id);
-                    const companyName = jobDetail?.employer?.companyName || 
-                                       (jobDetail?.employer?.email ? jobDetail.employer.email.split('@')[0] : "Employer");
+                    const companyName = jobDetail?.companyName || jobDetail?.employer?.employerProfile?.companyName || jobDetail?.employer?.companyName || "Employer";
+
+                    // Map status to display string
+                    const displayStatus = job.status === 'ongoing' ? 'Ongoing' 
+                        : job.status === 'accepted' ? 'Accepted'
+                        : 'Upcoming';
 
                     return {
                         id: String(job.id),
                         title: job.title,
                         company: companyName,
                         salary: jobDetail?.salary ? `${jobDetail.salary.toLocaleString()} VND` : (job.salary ? `${job.salary.toLocaleString()} VND` : ""),
-                        status: "Upcoming",
+                        status: displayStatus,
                         startDate: new Date(job.startDate).toLocaleDateString(),
                         duration: `${job.workerQuota} workers`,
                         location: formatJobLocation(job.locationRef || {
@@ -102,7 +128,25 @@ export default function EmployeeDashboard() {
                         }),
                     };
                 }) || [];
-                setActiveJobs(jobs);
+                setActiveJobs(activeJobsList);
+
+                // Update stats
+                setStats({
+                    applications: {
+                        count: profile.applicationCounts
+                            ? Object.values(profile.applicationCounts).reduce((a, b) => a + b, 0)
+                            : 0,
+                        pending: profile.applicationCounts?.pending ?? 0,
+                    },
+                    jobsCompleted: {
+                        count: profile.applicationCounts?.completed ?? 0,
+                        thisMonth: completedThisMonthCount,
+                    },
+                    totalEarned: {
+                        amount: earnedAmount,
+                        changePercent: 0, // Need historical data to calculate change
+                    },
+                });
 
             } catch (error) {
                 console.error("Error fetching dashboard data:", error);
@@ -114,23 +158,13 @@ export default function EmployeeDashboard() {
         fetchData();
     }, []);
 
-    // Transform API data to component format
-    const stats = {
-        applications: {
-            count: userData?.applicationCounts
-                ? Object.values(userData.applicationCounts).reduce((a, b) => a + b, 0)
-                : 0,
-            pending: userData?.applicationCounts?.pending ?? 0,
-        },
-        jobsCompleted: {
-            count: userData?.applicationCounts?.completed ?? 0,
-            thisMonth: 0, // Would need additional API data
-        },
-        totalEarned: {
-            amount: 0, // Would need additional API data
-            changePercent: 0,
-        },
-    };
+    // Initial stats state (will be updated by useEffect)
+    const [stats, setStats] = useState({
+        applications: { count: 0, pending: 0 },
+        jobsCompleted: { count: 0, thisMonth: 0 },
+        totalEarned: { amount: 0, changePercent: 0 }
+    });
+
 
     // Extract days with jobs for calendar
     const daysWithJobs = userData?.recentJobs?.map((job) => {
@@ -179,7 +213,7 @@ export default function EmployeeDashboard() {
                         />
                         <EmployeeStatsCard
                             title="Total earned"
-                            value={`$${stats.totalEarned.amount}`}
+                            value={`${stats.totalEarned.amount.toLocaleString()} VND`}
                             subtitle={`+${stats.totalEarned.changePercent}% this month`}
                             icon={DollarSign}
                             iconBgColor="bg-primary/10"

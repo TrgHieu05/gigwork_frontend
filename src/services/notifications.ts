@@ -14,7 +14,19 @@ export const notificationsService = {
      * GET /api/notifications
      */
     async getNotifications(): Promise<Notification[]> {
-        const response = await api.get<Notification[]>('/api/notifications');
-        return response.data;
+        const response = await api.get<any>('/api/notifications');
+        
+        // Handle if response is array
+        if (Array.isArray(response.data)) {
+            return response.data;
+        }
+        
+        // Handle if response is object with items (pagination)
+        if (response.data && Array.isArray(response.data.items)) {
+            return response.data.items;
+        }
+
+        // Default empty array
+        return [];
     },
 };

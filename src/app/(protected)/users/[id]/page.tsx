@@ -131,29 +131,11 @@ export default function UserProfilePage() {
         fetchProfile();
     }, [params.id]);
 
+    // Remove the old handleAvatarChange function definition since we moved it up
+    
     const handleAvatarClick = () => {
         if (isOwner && fileInputRef.current) {
             fileInputRef.current.click();
-        }
-    };
-
-    const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file && profile) {
-            setIsUploading(true);
-            try {
-                const imageKind = profile.isEmployer ? 'company_logo' : 'avatar';
-                const role = profile.isEmployer ? 'employer' : 'employee';
-                await profileService.uploadImage(role, file, imageKind);
-                // Refresh profile to get new image
-                const userData = await profileService.getCurrentUser();
-                setProfile(userData);
-            } catch (err) {
-                console.error("Error uploading image:", err);
-                alert("Failed to upload image");
-            } finally {
-                setIsUploading(false);
-            }
         }
     };
 
@@ -188,10 +170,50 @@ export default function UserProfilePage() {
     const isEmployee = profile.isWorker;
     const isEmployer = profile.isEmployer;
 
-    // Get image URL for avatar
-    const imageUrl = isOwner
-        ? profileService.getImageUrl(isEmployer ? 'employer' : 'employee', isEmployer ? 'company_logo' : 'avatar')
-        : '';
+    // Get image URL for avatar with timestamp to force refresh after update
+    const [avatarUrl, setAvatarUrl] = useState<string>('');
+
+    useEffect(() => {
+        if (profile) {
+            const isEmployee = profile.isWorker;
+            const isEmployer = profile.isEmployer;
+            const role = isEmployer ? 'employer' : 'employee';
+            const kind = isEmployer ? 'company_logo' : 'avatar';
+            
+            // Initial URL
+            const url = profileService.getImageUrl(role, kind);
+            setAvatarUrl(url);
+        }
+    }, [profile]);
+
+    const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file && profile) {
+            setIsUploading(true);
+            try {
+                const isEmployer = profile.isEmployer;
+                const imageKind = isEmployer ? 'company_logo' : 'avatar';
+                const role = isEmployer ? 'employer' : 'employee';
+                
+                await profileService.uploadImage(role, file, imageKind);
+                
+                // Update avatar URL with timestamp to force reload
+                const newUrl = `${profileService.getImageUrl(role, imageKind)}&t=${Date.now()}`;
+                setAvatarUrl(newUrl);
+                
+                // Refresh profile to get new data if needed
+                if (isOwner) {
+                    const userData = await profileService.getCurrentUser();
+                    setProfile(userData);
+                }
+            } catch (err) {
+                console.error("Error uploading image:", err);
+                // Don't use alert, use a toast or just log it
+            } finally {
+                setIsUploading(false);
+            }
+        }
+    };
 
     return (
         <div className="h-full p-6 overflow-auto">
@@ -241,7 +263,7 @@ export default function UserProfilePage() {
                                         className={`h-24 w-24 mb-4 ${isOwner ? 'cursor-pointer' : ''}`}
                                         onClick={handleAvatarClick}
                                     >
-                                        <AvatarImage src={isOwner ? imageUrl : ''} />
+                                        <AvatarImage src={isOwner ? avatarUrl : ''} />
                                         <AvatarFallback className="text-2xl">
                                             {isEmployer ? (
                                                 <Building className="h-10 w-10 text-primary" />
@@ -336,33 +358,33 @@ export default function UserProfilePage() {
                         </CardHeader>
                         <CardContent>
                             <div className="grid grid-cols-2 gap-4">
-                                {isEmployee && profile.applicationCounts && (
+                                {isEmployee && (
                                     <>
                                         <div className="text-center p-3 bg-green-50 rounded-lg">
                                             <p className="text-2xl font-bold text-green-600">
-                                                {profile.applicationCounts.completed}
+                                                {profile.applicationCounts?.completed || 0}
                                             </p>
                                             <p className="text-xs text-muted-foreground">Completed</p>
                                         </div>
                                         <div className="text-center p-3 bg-blue-50 rounded-lg">
                                             <p className="text-2xl font-bold text-blue-600">
-                                                {profile.applicationCounts.accepted}
+                                                {profile.applicationCounts?.accepted || 0}
                                             </p>
                                             <p className="text-xs text-muted-foreground">Accepted</p>
                                         </div>
                                     </>
                                 )}
-                                {isEmployer && profile.jobCounts && (
+                                {isEmployer && (
                                     <>
                                         <div className="text-center p-3 bg-blue-50 rounded-lg">
                                             <p className="text-2xl font-bold text-blue-600">
-                                                {profile.jobCounts.total}
+                                                {profile.jobCounts?.total || 0}
                                             </p>
                                             <p className="text-xs text-muted-foreground">Total Jobs</p>
                                         </div>
                                         <div className="text-center p-3 bg-green-50 rounded-lg">
                                             <p className="text-2xl font-bold text-green-600">
-                                                {profile.jobCounts.open}
+                                                {profile.jobCounts?.open || 0}
                                             </p>
                                             <p className="text-xs text-muted-foreground">Open Jobs</p>
                                         </div>

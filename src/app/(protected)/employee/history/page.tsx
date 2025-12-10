@@ -38,7 +38,7 @@ export default function EmployeeHistoryPage() {
                         return {
                             id: String(app.applicationId),
                             title: app.jobTitle || "Unknown Job",
-                            company: "Unknown Company", // API doesn't return employer info in recentApplications
+                            company: app.companyName || "Unknown Company",
                             time: app.appliedAt ? new Date(app.appliedAt).toLocaleDateString() : "Recently",
                             status: statusMap[app.status] || "Pending",
                         };
@@ -52,7 +52,7 @@ export default function EmployeeHistoryPage() {
                         .map((app) => ({
                             id: String(app.applicationId),
                             title: app.jobTitle || "Unknown Job",
-                            company: "Unknown Company",
+                            company: app.companyName || "Unknown Company",
                             location: "Unknown Location",
                             completedDate: app.appliedAt ? new Date(app.appliedAt).toLocaleDateString() : "Recently",
                             duration: "N/A",

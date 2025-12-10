@@ -59,7 +59,7 @@ export function transformApiJob(apiJob: ApiJob): Job {
     return {
         id: String(apiJob.id),
         title: apiJob.title,
-        company: apiJob.employer?.companyName || (apiJob.employer?.email ? apiJob.employer.email.split('@')[0] : "Employer"),
+        company: apiJob.companyName || apiJob.employer?.employerProfile?.companyName || apiJob.employer?.companyName || "Employer",
         location: getJobLocationString(apiJob),
         duration: `${apiJob.durationDays} days`,
         salary: apiJob.salary ? `${apiJob.salary.toLocaleString()} VND` : "Negotiable",

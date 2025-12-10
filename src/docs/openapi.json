@@ -58,6 +58,7 @@
           "employerId": { "type": "integer" },
           "title": { "type": "string" },
           "description": { "type": "string" },
+          "companyName": { "type": "string" },
           "sessionId": { "type": "integer", "nullable": true },
           "skillId": { "type": "integer", "nullable": true },
           "locationId": { "type": "integer", "nullable": true },
