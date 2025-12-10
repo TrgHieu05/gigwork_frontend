@@ -163,18 +163,30 @@ export default function EmployeeDashboard() {
         totalEarned: { amount: 0, changePercent: 0 }
     });
 
-    // Build days with jobs data for calendar - use memoized calculation with job details
+    // Build days with jobs data for calendar - use accepted applications for employees
     const daysWithJobs: DayWithJob[] = useMemo(() => {
-        if (!userData?.recentJobs) return [];
+        // For employees, jobs come from accepted applications, not recentJobs
+        if (!userData?.recentApplications) return [];
 
         // Map to collect jobs by date key
         const dayJobMap = new Map<string, DayWithJob>();
 
-        userData.recentJobs.forEach((job) => {
-            const startDate = new Date(job.startDate);
-            // Get durationDays from job details, fallback to 1
-            const jobDetail = jobDetailsMap.get(job.id);
-            const duration = jobDetail?.durationDays || 1;
+        // Filter for accepted/confirmed applications only
+        const acceptedApplications = userData.recentApplications.filter(
+            app => app.status === 'accepted' || app.status === 'confirmed' || app.status === 'completed'
+        );
+
+        acceptedApplications.forEach((app) => {
+            // Get job details from map (should have been fetched in useEffect)
+            const jobDetail = app.jobId ? jobDetailsMap.get(app.jobId) : null;
+
+            if (!jobDetail) {
+                console.log('No job detail found for application:', app.applicationId, 'jobId:', app.jobId);
+                return;
+            }
+
+            const startDate = new Date(jobDetail.startDate);
+            const duration = jobDetail.durationDays || 1;
 
             // Add job to each day it spans
             for (let i = 0; i < duration; i++) {
@@ -193,7 +205,7 @@ export default function EmployeeDashboard() {
                 }
 
                 // Build location string
-                const location = formatJobLocation(jobDetail?.locationRef || job.locationRef || {
+                const location = formatJobLocation(jobDetail.locationRef || {
                     province: "",
                     city: "",
                     address: "",
@@ -201,18 +213,18 @@ export default function EmployeeDashboard() {
 
                 // Add job info for tooltip
                 const calendarJob: CalendarJob = {
-                    id: job.id,
-                    title: job.title,
+                    id: jobDetail.id,
+                    title: jobDetail.title,
                     location: location || undefined,
-                    salary: job.salary ? `${job.salary.toLocaleString()} VND` : undefined,
-                    status: job.status,
+                    salary: jobDetail.salary ? `${jobDetail.salary.toLocaleString()} VND` : undefined,
+                    status: app.status,
                 };
                 dayData.jobs.push(calendarJob);
             }
         });
 
         return Array.from(dayJobMap.values());
-    }, [userData?.recentJobs, jobDetailsMap]);
+    }, [userData?.recentApplications, jobDetailsMap]);
 
     if (isLoading) {
         return (
