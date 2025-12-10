@@ -1827,7 +1827,8 @@
         "tags": [
           "Applications"
         ],
-        "summary": "Get application detail by id",
+        "summary": "List applications for a job by id (jobId)",
+        "description": "Employer sees all applications for the job; worker sees only their own application for that job.",
         "security": [
           {
             "BearerAuth": []
@@ -1839,7 +1840,10 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/JobApplicationFull"
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/JobApplicationFull"
+                  }
                 }
               }
             }

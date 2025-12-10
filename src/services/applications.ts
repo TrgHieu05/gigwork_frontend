@@ -19,7 +19,7 @@ export interface Application {
     worker?: UserProfile;
 }
 
-// Full application response from GET /api/applications (matches OpenAPI JobApplicationFull schema)
+// Full application response (for future use when backend supports GET /api/applications)
 export interface JobApplicationFull {
     id: number;
     jobId: number;
@@ -59,11 +59,13 @@ export const applicationsService = {
     },
 
     /**
-     * Get applications by job ID (filtered from getAll)
+     * Get applications for a specific job by jobId
+     * GET /api/applications/{jobId}
+     * Employer sees all applications for the job; worker sees only their own
      */
     async getByJobId(jobId: number): Promise<JobApplicationFull[]> {
-        const allApplications = await this.getAll();
-        return allApplications.filter(app => app.jobId === jobId);
+        const response = await api.get<JobApplicationFull[]>(`/api/applications/${jobId}`);
+        return response.data;
     },
 
     /**

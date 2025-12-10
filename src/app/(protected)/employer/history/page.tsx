@@ -45,7 +45,6 @@ function transformApiJob(apiJob: Job, applications: JobApplicationFull[]): JobCa
   const endDate = new Date(startDate);
   endDate.setDate(endDate.getDate() + apiJob.durationDays);
 
-  // Map API status to UI status (handle potential case mismatch)
   const apiStatus = apiJob.status?.toLowerCase() || "open";
   const statusMap: Record<string, JobStatus> = {
     open: "open",
@@ -56,11 +55,7 @@ function transformApiJob(apiJob: Job, applications: JobApplicationFull[]): JobCa
     upcoming: "upcoming",
   };
 
-  // Filter applications for this job
-  const jobApps = applications.filter(app => app.jobId === apiJob.id);
-
-  // Calculate hired count from applications
-  const hiredCount = jobApps.filter(app =>
+  const hiredCount = applications.filter(app =>
     app.status.toLowerCase() === 'accepted' || app.status.toLowerCase() === 'hired' || app.status.toLowerCase() === 'completed'
   ).length;
 
@@ -72,7 +67,7 @@ function transformApiJob(apiJob: Job, applications: JobApplicationFull[]): JobCa
     duration: `${apiJob.durationDays} days`,
     salary: apiJob.salary ? `${apiJob.salary.toLocaleString()} VND` : "Negotiable",
     dateRange: `${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}`,
-    applicantsCount: jobApps.length,
+    applicantsCount: applications.length,
     hiredCount: hiredCount,
     postedDate: apiJob.createdAt ? new Date(apiJob.createdAt).toLocaleDateString() : "Recently",
   };
@@ -97,14 +92,8 @@ export default function HistoryPage() {
           return;
         }
 
-        // Fetch jobs and applications in parallel
-        const [jobsResponse, allApplications] = await Promise.all([
-          jobsService.listJobs(),
-          applicationsService.getAll().catch(err => {
-            console.error("Error fetching applications:", err);
-            return [] as JobApplicationFull[];
-          })
-        ]);
+        // Fetch jobs from API
+        const jobsResponse = await jobsService.listJobs();
 
         if (!jobsResponse || !Array.isArray(jobsResponse.items)) {
           console.error("Invalid jobs response", jobsResponse);
@@ -113,41 +102,46 @@ export default function HistoryPage() {
           return;
         }
 
-        // Filter jobs by current employer (handle potential type mismatches)
-        // Check both employerId field and nested employer object
-        const myJobs = jobsResponse.items.filter(job => {
+        // Filter jobs by current employer
+        const myJobsList = jobsResponse.items.filter(job => {
           const matchesId = job.employerId && String(job.employerId) === String(currentUser.id);
           const matchesEmployerObj = job.employer?.id && String(job.employer.id) === String(currentUser.id);
           return matchesId || matchesEmployerObj;
         });
 
-        // Transform jobs with applications data from API
-        const transformedJobs = myJobs.map(job => transformApiJob(job, allApplications));
-        setJobs(transformedJobs);
+        // Fetch applications for each job using the API
+        const allApplications: ApplicationHistory[] = [];
+        const jobsWithApps = await Promise.all(
+          myJobsList.map(async (job) => {
+            try {
+              const apps = await applicationsService.getByJobId(job.id);
 
-        // Get my job IDs for filtering applications
-        const myJobIds = new Set(myJobs.map(job => job.id));
+              // Transform applications to history format
+              apps.forEach(app => {
+                allApplications.push({
+                  id: String(app.id),
+                  applicantName: app.worker?.email?.split('@')[0] || "Candidate",
+                  applicantAvatar: undefined,
+                  jobTitle: job.title,
+                  appliedDate: app.appliedAt ? new Date(app.appliedAt).toLocaleDateString() : "Recently",
+                  status: app.status as ApplicationHistoryStatus,
+                  salary: job.salary,
+                });
+              });
 
-        // Derive applications history from API applications (filtered by my jobs)
-        const myApplications = allApplications.filter(app => myJobIds.has(app.jobId));
+              return transformApiJob(job, apps);
+            } catch (e) {
+              console.error(`Failed to fetch applications for job ${job.id}`, e);
+              return transformApiJob(job, []);
+            }
+          })
+        );
 
-        const appHistory: ApplicationHistory[] = myApplications.map(app => {
-          const job = myJobs.find(j => j.id === app.jobId);
-          return {
-            id: String(app.id),
-            applicantName: app.worker?.email?.split('@')[0] || "Candidate",
-            applicantAvatar: undefined,
-            jobTitle: job?.title || app.job?.title || "Unknown Job",
-            appliedDate: app.appliedAt ? new Date(app.appliedAt).toLocaleDateString() : "Recently",
-            status: app.status as ApplicationHistoryStatus,
-            salary: job?.salary || app.job?.salary,
-          };
-        });
-
-        setApplications(appHistory);
+        setJobs(jobsWithApps);
+        setApplications(allApplications);
 
         // Filter hired employees (accepted or completed applications)
-        const hired = appHistory.filter(a => a.status === "accepted" || a.status === "completed");
+        const hired = allApplications.filter(a => a.status === "accepted" || a.status === "completed");
         setHiredEmployees(hired);
 
       } catch (error) {

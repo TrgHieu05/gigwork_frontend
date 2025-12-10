@@ -26,11 +26,8 @@ function transformApiJob(apiJob: Job, applications: JobApplicationFull[]): JobCa
         completed: "completed",
     };
 
-    // Filter applications for this job
-    const jobApps = applications.filter(app => app.jobId === apiJob.id);
-
     // Calculate hired count from applications
-    const hiredCount = jobApps.filter(app =>
+    const hiredCount = applications.filter(app =>
         app.status.toLowerCase() === 'accepted' || app.status.toLowerCase() === 'hired'
     ).length;
 
@@ -42,7 +39,7 @@ function transformApiJob(apiJob: Job, applications: JobApplicationFull[]): JobCa
         duration: `${apiJob.durationDays} days`,
         salary: apiJob.salary ? `${apiJob.salary.toLocaleString()} VND` : "Negotiable",
         dateRange: `${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}`,
-        applicantsCount: jobApps.length,
+        applicantsCount: applications.length,
         hiredCount: hiredCount,
         postedDate: apiJob.createdAt ? new Date(apiJob.createdAt).toLocaleDateString() : "Recently",
     };
@@ -68,22 +65,26 @@ export default function MyJobsPage() {
             const currentUser = authService.getCurrentUser();
             if (!currentUser) return;
 
-            // Fetch all jobs and applications in parallel
-            const [jobsResponse, allApplications] = await Promise.all([
-                jobsService.listJobs(),
-                applicationsService.getAll().catch(err => {
-                    console.error("Error fetching applications:", err);
-                    return [] as JobApplicationFull[];
-                })
-            ]);
+            // Fetch all jobs from API
+            const response = await jobsService.listJobs();
 
             // Filter jobs by current employer
-            const myJobs = jobsResponse.items.filter(job => job.employerId === currentUser.id);
+            const myJobs = response.items.filter(job => job.employerId === currentUser.id);
 
-            // Transform jobs with applications data
-            const transformedJobs = myJobs.map(job => transformApiJob(job, allApplications));
+            // Fetch applications for each job using the new API
+            const jobsWithApps = await Promise.all(
+                myJobs.map(async (job) => {
+                    try {
+                        const apps = await applicationsService.getByJobId(job.id);
+                        return transformApiJob(job, apps);
+                    } catch (e) {
+                        console.error(`Failed to fetch applications for job ${job.id}`, e);
+                        return transformApiJob(job, []);
+                    }
+                })
+            );
 
-            setJobs(transformedJobs);
+            setJobs(jobsWithApps);
         } catch (error) {
             console.error("Error fetching jobs:", error);
         } finally {

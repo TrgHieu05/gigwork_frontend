@@ -36,12 +36,11 @@ export default function EmployerDashboard() {
         console.error("Error getting local user info:", e);
       }
 
-      // Fetch profile, jobs, and applications in parallel
+      // Fetch profile and jobs in parallel
       try {
-        const [profileResult, jobsResult, appsResult] = await Promise.allSettled([
+        const [profileResult, jobsResult] = await Promise.allSettled([
           profileService.getCurrentUser(),
-          jobsService.listJobs(),
-          applicationsService.getAll()
+          jobsService.listJobs()
         ]);
 
         let currentUserId: number | undefined;
@@ -56,15 +55,6 @@ export default function EmployerDashboard() {
           }
         } else {
           console.error("Error fetching profile:", getErrorMessage(profileResult.reason));
-          console.error("Raw profile error:", profileResult.reason);
-        }
-
-        // Handle Applications Result
-        if (appsResult.status === 'fulfilled') {
-          setAllApplications(appsResult.value);
-        } else {
-          console.error("Error fetching applications:", getErrorMessage(appsResult.reason));
-          setAllApplications([]);
         }
 
         // Handle Jobs Result
@@ -75,6 +65,22 @@ export default function EmployerDashboard() {
           if (currentUserId) {
             const myJobs = allJobs.filter(job => job.employerId === currentUserId);
             setJobs(myJobs);
+
+            // Fetch applications for each job using the API
+            const appsResults = await Promise.all(
+              myJobs.map(async (job) => {
+                try {
+                  return await applicationsService.getByJobId(job.id);
+                } catch (e) {
+                  console.error(`Failed to fetch applications for job ${job.id}`, e);
+                  return [];
+                }
+              })
+            );
+
+            // Flatten all applications
+            const allApps = appsResults.flat();
+            setAllApplications(allApps);
           } else {
             console.warn("Could not filter jobs: User ID missing");
             setJobs([]);
@@ -97,7 +103,7 @@ export default function EmployerDashboard() {
     try {
       await applicationsService.accept(Number(applicationId));
 
-      // Update local state for applications
+      // Update local state
       setAllApplications(currentApps =>
         currentApps.map(app =>
           String(app.id) === applicationId ? { ...app, status: "accepted" as const } : app
@@ -113,7 +119,7 @@ export default function EmployerDashboard() {
     try {
       await applicationsService.reject(Number(applicationId));
 
-      // Update local state for applications
+      // Update local state
       setAllApplications(currentApps =>
         currentApps.map(app =>
           String(app.id) === applicationId ? { ...app, status: "cancelled" as const } : app
@@ -125,24 +131,17 @@ export default function EmployerDashboard() {
     }
   };
 
-  // Get my job IDs
-  const myJobIds = new Set(jobs.map(job => job.id));
-
-  // Filter applications for my jobs
-  const myApplications = allApplications.filter(app => myJobIds.has(app.jobId));
-
   // Transform recent jobs from API to component format
-  // Use real jobs data with actual application counts from API
   const recentJobs: Job[] = jobs.slice(0, 5).map((job) => ({
     id: String(job.id),
     title: job.title,
     status: job.status === "open" ? "active" : job.status === "completed" ? "closed" : "active",
     postedDate: new Date(job.startDate).toLocaleDateString("en-GB"),
-    applicationsCount: myApplications.filter(app => app.jobId === job.id).length,
+    applicationsCount: allApplications.filter(app => app.jobId === job.id).length,
   }));
 
   // Transform applications from API
-  const pendingApplications: Application[] = myApplications
+  const pendingApplications: Application[] = allApplications
     .filter((app) => app.status === "pending")
     .slice(0, 5)
     .map((app) => {
@@ -156,10 +155,10 @@ export default function EmployerDashboard() {
       };
     });
 
-  // Calculate stats from API applications
-  const totalApplications = myApplications.length;
+  // Calculate stats
+  const totalApplications = allApplications.length;
   const jobsPosted = jobs.length;
-  const employeesHired = myApplications.filter(a => a.status === "accepted" || a.status === "completed").length;
+  const employeesHired = allApplications.filter(a => a.status === "accepted" || a.status === "completed").length;
   const openJobs = jobs.filter((job) => job.status === "open").length;
 
   if (isLoading) {
