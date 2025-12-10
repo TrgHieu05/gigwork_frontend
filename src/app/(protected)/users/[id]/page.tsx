@@ -57,6 +57,22 @@ export default function UserProfilePage() {
     const [isUploading, setIsUploading] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
+    // Get image URL for avatar with timestamp to force refresh after update
+    const [avatarUrl, setAvatarUrl] = useState<string>('');
+
+    useEffect(() => {
+        if (profile) {
+            const isEmployee = profile.isWorker;
+            const isEmployer = profile.isEmployer;
+            const role = isEmployer ? 'employer' : 'employee';
+            const kind = isEmployer ? 'company_logo' : 'avatar';
+            
+            // Initial URL
+            const url = profileService.getImageUrl(role, kind);
+            setAvatarUrl(url);
+        }
+    }, [profile]);
+
     useEffect(() => {
         const fetchProfile = async () => {
             setIsLoading(true);
@@ -169,22 +185,6 @@ export default function UserProfilePage() {
 
     const isEmployee = profile.isWorker;
     const isEmployer = profile.isEmployer;
-
-    // Get image URL for avatar with timestamp to force refresh after update
-    const [avatarUrl, setAvatarUrl] = useState<string>('');
-
-    useEffect(() => {
-        if (profile) {
-            const isEmployee = profile.isWorker;
-            const isEmployer = profile.isEmployer;
-            const role = isEmployer ? 'employer' : 'employee';
-            const kind = isEmployer ? 'company_logo' : 'avatar';
-            
-            // Initial URL
-            const url = profileService.getImageUrl(role, kind);
-            setAvatarUrl(url);
-        }
-    }, [profile]);
 
     const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
