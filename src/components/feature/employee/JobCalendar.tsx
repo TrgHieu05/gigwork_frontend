@@ -3,24 +3,27 @@
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ChevronLeft, ArrowUp, ArrowDown, MapPin, Clock, Briefcase } from "lucide-react";
+import { ChevronLeft, ArrowUp, ArrowDown, MapPin, Clock, Briefcase, DollarSign } from "lucide-react";
 
 // Job info for calendar display
-interface CalendarJob {
+export interface CalendarJob {
     id: string | number;
     title: string;
     location?: string;
     startTime?: string;
     status?: string;
+    salary?: string;
 }
 
-interface DayWithJob {
+export interface DayWithJob {
     day: number;
+    month: number;
+    year: number;
     jobs: CalendarJob[];
 }
 
 interface JobCalendarProps {
-    daysWithJobs?: number[] | DayWithJob[];
+    daysWithJobs?: DayWithJob[];
 }
 
 export function JobCalendar({ daysWithJobs = [] }: JobCalendarProps) {
@@ -34,21 +37,23 @@ export function JobCalendar({ daysWithJobs = [] }: JobCalendarProps) {
 
     const daysOfWeek = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"];
 
-    // Normalize daysWithJobs to always be DayWithJob[] format
-    const normalizedDays: DayWithJob[] = daysWithJobs.map((item) => {
-        if (typeof item === "number") {
-            return { day: item, jobs: [] };
-        }
-        return item;
-    });
-
+    // Get jobs for a specific day in current month/year
     const getJobsForDay = (day: number): CalendarJob[] => {
-        const dayData = normalizedDays.find(d => d.day === day);
+        const month = currentDate.getMonth();
+        const year = currentDate.getFullYear();
+        const dayData = daysWithJobs.find(d =>
+            d.day === day && d.month === month && d.year === year
+        );
         return dayData?.jobs || [];
     };
 
+    // Check if a day in current month has jobs
     const hasDayWithJobs = (day: number): boolean => {
-        return normalizedDays.some(d => d.day === day);
+        const month = currentDate.getMonth();
+        const year = currentDate.getFullYear();
+        return daysWithJobs.some(d =>
+            d.day === day && d.month === month && d.year === year
+        );
     };
 
     const getDaysInMonth = (date: Date) => {
@@ -159,7 +164,12 @@ export function JobCalendar({ daysWithJobs = [] }: JobCalendarProps) {
                     {days.map((dayInfo, index) => {
                         const hasJob = dayInfo.isCurrentMonth && hasDayWithJobs(dayInfo.day);
                         const jobsForDay = dayInfo.isCurrentMonth ? getJobsForDay(dayInfo.day) : [];
-                        const isHovered = hoveredDay === dayInfo.day && dayInfo.isCurrentMonth;
+                        const isHovered = hoveredDay === dayInfo.day && dayInfo.isCurrentMonth && hasJob;
+
+                        // Calculate column position for tooltip alignment
+                        const colIndex = index % 7;
+                        const isLeftSide = colIndex < 2;
+                        const isRightSide = colIndex > 4;
 
                         return (
                             <div
@@ -186,11 +196,11 @@ export function JobCalendar({ daysWithJobs = [] }: JobCalendarProps) {
                             >
                                 {dayInfo.day}
                                 {/* Red dot for days with jobs */}
-                                {hasJob && !dayInfo.isToday && (
+                                {hasJob && (
                                     <div
                                         style={{
                                             position: "absolute",
-                                            top: "4px",
+                                            top: "2px",
                                             width: "6px",
                                             height: "6px",
                                             borderRadius: "9999px",
@@ -205,42 +215,56 @@ export function JobCalendar({ daysWithJobs = [] }: JobCalendarProps) {
                                         style={{
                                             position: "absolute",
                                             top: "100%",
-                                            left: "50%",
-                                            transform: "translateX(-50%)",
+                                            left: isLeftSide ? "0" : isRightSide ? "auto" : "50%",
+                                            right: isRightSide ? "0" : "auto",
+                                            transform: isLeftSide || isRightSide ? "none" : "translateX(-50%)",
                                             zIndex: 50,
                                             marginTop: "8px",
-                                            minWidth: "220px",
-                                            maxWidth: "280px",
+                                            minWidth: "250px",
+                                            maxWidth: "320px",
                                         }}
                                     >
-                                        <div className="bg-white dark:bg-gray-900 border rounded-lg shadow-lg p-3 space-y-2">
-                                            <div className="text-xs font-semibold text-muted-foreground mb-2">
-                                                Jobs on {monthNames[currentDate.getMonth()]} {dayInfo.day}
+                                        <div className="bg-white dark:bg-gray-900 border rounded-lg shadow-xl p-3 space-y-3">
+                                            <div className="text-xs font-semibold text-muted-foreground border-b pb-2">
+                                                Jobs on {monthNames[currentDate.getMonth()]} {dayInfo.day}, {currentDate.getFullYear()}
                                             </div>
                                             {jobsForDay.map((job, jobIndex) => (
                                                 <div
                                                     key={job.id || jobIndex}
-                                                    className="p-2 bg-muted/50 rounded-md space-y-1"
+                                                    className="p-3 bg-muted/50 rounded-lg space-y-2 border"
                                                 >
-                                                    <div className="flex items-center gap-2">
-                                                        <Briefcase className="h-3 w-3 text-primary" />
-                                                        <span className="font-medium text-sm truncate">{job.title}</span>
+                                                    <div className="flex items-start gap-2">
+                                                        <Briefcase className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+                                                        <span className="font-semibold text-sm">{job.title}</span>
                                                     </div>
                                                     {job.location && (
                                                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                                            <MapPin className="h-3 w-3" />
+                                                            <MapPin className="h-3 w-3 flex-shrink-0" />
                                                             <span className="truncate">{job.location}</span>
+                                                        </div>
+                                                    )}
+                                                    {job.salary && (
+                                                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                                            <DollarSign className="h-3 w-3 flex-shrink-0" />
+                                                            <span>{job.salary}</span>
                                                         </div>
                                                     )}
                                                     {job.startTime && (
                                                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                                            <Clock className="h-3 w-3" />
+                                                            <Clock className="h-3 w-3 flex-shrink-0" />
                                                             <span>{job.startTime}</span>
                                                         </div>
                                                     )}
                                                     {job.status && (
-                                                        <Badge variant="outline" className="text-xs mt-1">
-                                                            {job.status}
+                                                        <Badge
+                                                            variant={
+                                                                job.status === 'accepted' || job.status === 'ongoing' ? "default" :
+                                                                    job.status === 'completed' ? "secondary" :
+                                                                        job.status === 'pending' ? "outline" : "outline"
+                                                            }
+                                                            className="text-xs mt-1"
+                                                        >
+                                                            {job.status.charAt(0).toUpperCase() + job.status.slice(1)}
                                                         </Badge>
                                                     )}
                                                 </div>
@@ -251,8 +275,9 @@ export function JobCalendar({ daysWithJobs = [] }: JobCalendarProps) {
                                             style={{
                                                 position: "absolute",
                                                 top: "-6px",
-                                                left: "50%",
-                                                transform: "translateX(-50%)",
+                                                left: isLeftSide ? "16px" : isRightSide ? "auto" : "50%",
+                                                right: isRightSide ? "16px" : "auto",
+                                                transform: isLeftSide || isRightSide ? "none" : "translateX(-50%)",
                                                 width: 0,
                                                 height: 0,
                                                 borderLeft: "6px solid transparent",

@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileText, CheckSquare, DollarSign, ArrowRight, Loader2 } from "lucide-react";
 import Link from "next/link";
 
 // Import shared components
-import { JobCalendar } from "@/components/feature/employee/JobCalendar";
+import { JobCalendar, DayWithJob, CalendarJob } from "@/components/feature/employee/JobCalendar";
 import { EmployeeStatsCard } from "@/components/feature/employee/EmployeeStatsCard";
 import { EmployeeJobCard, type EmployeeJob } from "@/components/feature/employee/EmployeeJobCard";
 import { EmployeeApplicationCard, type EmployeeApplication } from "@/components/feature/employee/EmployeeApplicationCard";
@@ -22,6 +22,7 @@ export default function EmployeeDashboard() {
     const [userName, setUserName] = useState("User");
     const [activeJobs, setActiveJobs] = useState<EmployeeJob[]>([]);
     const [recentApplications, setRecentApplications] = useState<EmployeeApplication[]>([]);
+    const [jobDetailsMap, setJobDetailsMap] = useState<Map<number, Job>>(new Map());
 
     useEffect(() => {
         const fetchData = async () => {
@@ -37,14 +38,14 @@ export default function EmployeeDashboard() {
                 const profile = await profileService.getCurrentUser();
                 setUserData(profile);
 
-                // Fetch job details to get company names
+                // Fetch job details to get company names and durationDays
                 const jobIds = new Set<number>();
                 profile.recentJobs?.forEach(j => jobIds.add(j.id));
                 profile.recentApplications?.forEach(a => {
                     if (a.jobId) jobIds.add(a.jobId);
                 });
 
-                const jobDetailsMap = new Map<number, Job>();
+                const detailsMap = new Map<number, Job>();
                 if (jobIds.size > 0) {
                     const jobsPromises = Array.from(jobIds).map(async (id) => {
                         try {
@@ -55,18 +56,19 @@ export default function EmployeeDashboard() {
                             return null;
                         }
                     });
-                    
+
                     const jobs = await Promise.all(jobsPromises);
                     jobs.forEach(job => {
-                        if (job) jobDetailsMap.set(job.id, job);
+                        if (job) detailsMap.set(job.id, job);
                     });
                 }
+                setJobDetailsMap(detailsMap);
 
                 // Transform recent applications from API with enriched data
                 const apps: EmployeeApplication[] = profile.recentApplications?.map((app) => {
-                    const jobDetail = app.jobId ? jobDetailsMap.get(app.jobId) : null;
+                    const jobDetail = app.jobId ? detailsMap.get(app.jobId) : null;
                     const companyName = jobDetail?.companyName || jobDetail?.employer?.employerProfile?.companyName || jobDetail?.employer?.companyName || "Employer";
-                    
+
                     return {
                         id: String(app.applicationId),
                         title: app.jobTitle || jobDetail?.title || "Unknown Job",
@@ -86,17 +88,13 @@ export default function EmployeeDashboard() {
                 const currentYear = now.getFullYear();
 
                 const completedJobs = profile.recentJobs?.filter(j => j.status === 'completed' || j.status === 'finished') || [];
-                
+
                 // Calculate earned amount from completed jobs
-                // Note: This is an approximation based on recent jobs. 
-                // For accurate total, backend should provide this in UserProfile.
                 const earnedAmount = completedJobs.reduce((sum, job) => sum + (job.salary || 0), 0);
-                
+
                 // Calculate completed jobs this month
                 const completedThisMonthCount = completedJobs.filter(job => {
-                    // Use startDate as proxy for completion date if endDate not available
-                    // Ideally check job.endDate or application.completedAt
-                    const date = new Date(job.startDate); 
+                    const date = new Date(job.startDate);
                     return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
                 }).length;
 
@@ -105,29 +103,29 @@ export default function EmployeeDashboard() {
                 const activeJobsList: EmployeeJob[] = profile.recentJobs
                     ?.filter(job => job.status !== 'completed' && job.status !== 'cancelled' && job.status !== 'finished')
                     .map((job) => {
-                    const jobDetail = jobDetailsMap.get(job.id);
-                    const companyName = jobDetail?.companyName || jobDetail?.employer?.employerProfile?.companyName || jobDetail?.employer?.companyName || "Employer";
+                        const jobDetail = detailsMap.get(job.id);
+                        const companyName = jobDetail?.companyName || jobDetail?.employer?.employerProfile?.companyName || jobDetail?.employer?.companyName || "Employer";
 
-                    // Map status to display string
-                    const displayStatus = job.status === 'ongoing' ? 'Ongoing' 
-                        : job.status === 'accepted' ? 'Accepted'
-                        : 'Upcoming';
+                        // Map status to display string
+                        const displayStatus = job.status === 'ongoing' ? 'Ongoing'
+                            : job.status === 'accepted' ? 'Accepted'
+                                : 'Upcoming';
 
-                    return {
-                        id: String(job.id),
-                        title: job.title,
-                        company: companyName,
-                        salary: jobDetail?.salary ? `${jobDetail.salary.toLocaleString()} VND` : (job.salary ? `${job.salary.toLocaleString()} VND` : ""),
-                        status: displayStatus,
-                        startDate: new Date(job.startDate).toLocaleDateString(),
-                        duration: `${job.workerQuota} workers`,
-                        location: formatJobLocation(job.locationRef || {
-                            province: (job as any).province || "",
-                            city: (job as any).city || "",
-                            address: (job as any).address || "",
-                        }),
-                    };
-                }) || [];
+                        return {
+                            id: String(job.id),
+                            title: job.title,
+                            company: companyName,
+                            salary: jobDetail?.salary ? `${jobDetail.salary.toLocaleString()} VND` : (job.salary ? `${job.salary.toLocaleString()} VND` : ""),
+                            status: displayStatus,
+                            startDate: new Date(job.startDate).toLocaleDateString(),
+                            duration: jobDetail?.durationDays ? `${jobDetail.durationDays} days` : `${job.workerQuota} workers`,
+                            location: formatJobLocation(job.locationRef || {
+                                province: "",
+                                city: "",
+                                address: "",
+                            }),
+                        };
+                    }) || [];
                 setActiveJobs(activeJobsList);
 
                 // Update stats
@@ -144,7 +142,7 @@ export default function EmployeeDashboard() {
                     },
                     totalEarned: {
                         amount: earnedAmount,
-                        changePercent: 0, // Need historical data to calculate change
+                        changePercent: 0,
                     },
                 });
 
@@ -165,12 +163,56 @@ export default function EmployeeDashboard() {
         totalEarned: { amount: 0, changePercent: 0 }
     });
 
+    // Build days with jobs data for calendar - use memoized calculation with job details
+    const daysWithJobs: DayWithJob[] = useMemo(() => {
+        if (!userData?.recentJobs) return [];
 
-    // Extract days with jobs for calendar
-    const daysWithJobs = userData?.recentJobs?.map((job) => {
-        const date = new Date(job.startDate);
-        return date.getDate();
-    }) || [];
+        // Map to collect jobs by date key
+        const dayJobMap = new Map<string, DayWithJob>();
+
+        userData.recentJobs.forEach((job) => {
+            const startDate = new Date(job.startDate);
+            // Get durationDays from job details, fallback to 1
+            const jobDetail = jobDetailsMap.get(job.id);
+            const duration = jobDetail?.durationDays || 1;
+
+            // Add job to each day it spans
+            for (let i = 0; i < duration; i++) {
+                const date = new Date(startDate);
+                date.setDate(date.getDate() + i);
+
+                const day = date.getDate();
+                const month = date.getMonth();
+                const year = date.getFullYear();
+                const key = `${year}-${month}-${day}`;
+
+                let dayData = dayJobMap.get(key);
+                if (!dayData) {
+                    dayData = { day, month, year, jobs: [] };
+                    dayJobMap.set(key, dayData);
+                }
+
+                // Build location string
+                const location = formatJobLocation(jobDetail?.locationRef || job.locationRef || {
+                    province: "",
+                    city: "",
+                    address: "",
+                });
+
+                // Add job info for tooltip
+                const calendarJob: CalendarJob = {
+                    id: job.id,
+                    title: job.title,
+                    location: location || undefined,
+                    salary: job.salary ? `${job.salary.toLocaleString()} VND` : undefined,
+                    status: job.status,
+                };
+                dayData.jobs.push(calendarJob);
+            }
+        });
+
+        return Array.from(dayJobMap.values());
+    }, [userData?.recentJobs, jobDetailsMap]);
 
     if (isLoading) {
         return (
