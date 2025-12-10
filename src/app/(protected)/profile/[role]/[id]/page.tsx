@@ -89,10 +89,12 @@ export default function ProfilePage() {
                 }
             } catch (err: any) {
                 console.error("Error fetching profile:", err);
-                if (err?.response?.status === 404) {
-                    setError("Profile not found");
+                const status = err?.response?.status;
+                if (status === 404 || status === 400) {
+                    // User doesn't have this type of profile
+                    setError(`This user doesn't have a ${role} profile yet.`);
                 } else {
-                    setError("Failed to load profile");
+                    setError("Failed to load profile. Please try again later.");
                 }
             } finally {
                 setIsLoading(false);
