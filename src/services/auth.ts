@@ -81,6 +81,14 @@ export const authService = {
     },
 
     /**
+     * Verify email with token
+     * GET /api/auth/verify-email
+     */
+    async verifyEmail(token: string): Promise<void> {
+        await api.get(`/api/auth/verify-email?token=${token}`);
+    },
+
+    /**
      * Get current user from localStorage
      */
     getCurrentUser(): AuthPayload['user'] | null {
@@ -117,6 +125,15 @@ export const authService = {
 export function getErrorMessage(error: unknown): string {
     if (error instanceof AxiosError) {
         const apiError = error.response?.data as ApiError | undefined;
+        
+        // Handle raw Prisma errors leaking to frontend
+        const detail = apiError?.detail || '';
+        if (typeof detail === 'string') {
+            if (detail.includes('Unique constraint failed') && detail.includes('email')) {
+                 return 'This email address is already registered. Please sign in or use a different email.';
+            }
+        }
+
         if (apiError?.detail) {
             return apiError.detail;
         }

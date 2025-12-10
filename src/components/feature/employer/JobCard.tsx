@@ -9,7 +9,6 @@ import {
     DollarSign,
     Calendar,
     Users,
-    Eye,
     MoreVertical,
     Pencil,
     UserCheck,
@@ -28,7 +27,6 @@ export interface JobCardData {
     dateRange: string;
     applicantsCount: number;
     hiredCount: number;
-    viewsCount: number;
     postedDate: string;
 }
 
@@ -37,7 +35,6 @@ interface JobCardProps {
     isOwner?: boolean; // If true, show edit/applicant actions; if false, only show view details
     variant?: "full" | "compact"; // full = all details, compact = simplified for history
     onEdit?: (id: string) => void;
-    onClose?: (id: string) => void;
     onRepost?: (id: string) => void;
 }
 
@@ -50,7 +47,7 @@ const statusConfig: Record<JobStatus, { label: string; variant: "default" | "sec
     completed: { label: "Completed", variant: "secondary" },
 };
 
-export function JobCard({ job, isOwner = true, variant = "full", onEdit, onClose, onRepost }: JobCardProps) {
+export function JobCard({ job, isOwner = true, variant = "full", onEdit, onRepost }: JobCardProps) {
     const isActive = job.status === "open" || job.status === "ongoing";
 
     // Compact variant for history page
@@ -148,10 +145,6 @@ export function JobCard({ job, isOwner = true, variant = "full", onEdit, onClose
                             <span className="font-medium">{job.hiredCount}</span>
                             <span className="text-muted-foreground">hired</span>
                         </span>
-                        <span className="flex items-center gap-1">
-                            <Eye className="h-4 w-4" />
-                            <span>{job.viewsCount} views</span>
-                        </span>
                     </div>
                     <span className="text-sm text-muted-foreground">
                         Posted {job.postedDate}
@@ -171,13 +164,6 @@ export function JobCard({ job, isOwner = true, variant = "full", onEdit, onClose
                             <Button variant="outline" onClick={() => onEdit?.(job.id)}>
                                 <Pencil className="h-4 w-4 mr-2" />
                                 Edit
-                            </Button>
-                            <Button
-                                variant="outline"
-                                className="text-destructive hover:text-destructive"
-                                onClick={() => onClose?.(job.id)}
-                            >
-                                Close Job
                             </Button>
                         </>
                     ) : isOwner ? (

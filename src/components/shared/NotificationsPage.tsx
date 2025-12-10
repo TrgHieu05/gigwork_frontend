@@ -100,6 +100,12 @@ export function NotificationsPage() {
 
     // Transform and memoize notifications with local state applied
     const notifications = useMemo(() => {
+        // Safety check to prevent map error if apiNotifications is not an array
+        if (!Array.isArray(apiNotifications)) {
+            console.warn("apiNotifications is not an array:", apiNotifications);
+            return [];
+        }
+
         return apiNotifications
             .map(transformApiNotification)
             .filter((n: Notification) => !deletedIds.has(n.id))

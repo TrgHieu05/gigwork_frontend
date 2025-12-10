@@ -64,6 +64,14 @@ export function SignUpFormEmployee() {
         isEmployer: false,
       })
 
+      // Send verification email
+      try {
+        await authService.sendVerification()
+      } catch (verificationError) {
+        console.error("Failed to send verification email:", verificationError)
+        // We don't block registration if email sending fails, but we could notify the user
+      }
+
       // Redirect to setup profile page
       router.push("/setup-profile")
     } catch (err) {

@@ -1,4 +1,5 @@
 import api from '@/lib/api';
+import { JobLocation } from './jobs';
 
 // Employee profile types
 export interface EmployeeProfile {
@@ -54,15 +55,24 @@ export interface UserProfile {
         applicationId: number;
         jobId?: number;
         jobTitle?: string;
+        companyName?: string;
         status: string;
         appliedAt: string;
     }[];
     recentJobs?: {
         id: number;
         title: string;
-        location: string;
         startDate: string;
         workerQuota: number;
+        salary: number;
+        locationRef?: JobLocation;
+        status: string;
+    }[];
+    notificationsPreview?: {
+        id: number;
+        title: string;
+        type: string;
+        createdAt: string;
     }[];
 }
 

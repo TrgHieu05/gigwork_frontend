@@ -10,7 +10,7 @@ import {
 import { FileText, Briefcase, Users, Loader2 } from "lucide-react";
 
 // Import services
-import { authService } from "@/services/auth";
+import { authService, getErrorMessage } from "@/services/auth";
 import { profileService, UserProfile } from "@/services/profile";
 import { jobsService, Job as ApiJob } from "@/services/jobs";
 
@@ -23,26 +23,45 @@ export default function EmployerDashboard() {
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
+
+      // Get current user info from local storage (fast, reliable)
       try {
-        // Get current user info
         const currentUser = authService.getCurrentUser();
         if (currentUser?.email) {
           setCompanyName(currentUser.email.split("@")[0]);
         }
+      } catch (e) {
+        console.error("Error getting local user info:", e);
+      }
 
-        // Fetch full user data
-        const profile = await profileService.getCurrentUser();
-        setUserData(profile);
+      // Fetch profile and jobs in parallel
+      try {
+        const [profileResult, jobsResult] = await Promise.allSettled([
+          profileService.getCurrentUser(),
+          jobsService.listJobs()
+        ]);
 
-        if (profile.employerProfile?.companyName) {
-          setCompanyName(profile.employerProfile.companyName);
+        // Handle Profile Result
+        if (profileResult.status === 'fulfilled') {
+          const profile = profileResult.value;
+          setUserData(profile);
+          if (profile.employerProfile?.companyName) {
+            setCompanyName(profile.employerProfile.companyName);
+          }
+        } else {
+          console.error("Error fetching profile:", getErrorMessage(profileResult.reason));
+          console.error("Raw profile error:", profileResult.reason);
         }
 
-        // Fetch jobs with real application counts
-        const jobsResponse = await jobsService.listJobs();
-        setJobs(jobsResponse.items);
+        // Handle Jobs Result
+        if (jobsResult.status === 'fulfilled') {
+          setJobs(jobsResult.value.items);
+        } else {
+          console.error("Error fetching jobs:", getErrorMessage(jobsResult.reason));
+        }
+
       } catch (error) {
-        console.error("Error fetching dashboard data:", error);
+        console.error("Unexpected error in dashboard data fetch:", error);
       } finally {
         setIsLoading(false);
       }

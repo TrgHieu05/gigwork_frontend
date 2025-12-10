@@ -24,6 +24,7 @@ import {
     Calendar,
 } from "lucide-react";
 import { jobsService, JobType } from "@/services/jobs";
+import { LocationSelector } from "@/components/shared/LocationSelector";
 
 // Job types matching API enum
 const jobTypes: { value: JobType; label: string }[] = [
@@ -37,7 +38,10 @@ const jobTypes: { value: JobType; label: string }[] = [
 interface JobFormData {
     title: string;
     description: string;
-    location: string;
+    province: string;
+    city: string;
+    ward: string;
+    address: string;
     startDate: string;
     durationDays: number;
     workerQuota: number;
@@ -52,7 +56,10 @@ export default function CreateJobPage() {
     const [formData, setFormData] = useState<JobFormData>({
         title: "",
         description: "",
-        location: "",
+        province: "",
+        city: "",
+        ward: "",
+        address: "",
         startDate: "",
         durationDays: 1,
         workerQuota: 1,
@@ -80,8 +87,18 @@ export default function CreateJobPage() {
             setIsSubmitting(false);
             return;
         }
-        if (!formData.location.trim()) {
-            setError("Location is required");
+        if (!formData.address.trim()) {
+            setError("Address is required");
+            setIsSubmitting(false);
+            return;
+        }
+        if (!formData.city.trim()) {
+            setError("City is required");
+            setIsSubmitting(false);
+            return;
+        }
+        if (!formData.province.trim()) {
+            setError("Province is required");
             setIsSubmitting(false);
             return;
         }
@@ -95,7 +112,12 @@ export default function CreateJobPage() {
             await jobsService.createJob({
                 title: formData.title,
                 description: formData.description,
-                location: formData.location,
+                location: {
+                    province: formData.province,
+                    city: formData.city,
+                    ward: formData.ward || undefined,
+                    address: formData.address,
+                },
                 startDate: new Date(formData.startDate).toISOString(),
                 durationDays: formData.durationDays,
                 workerQuota: formData.workerQuota,
@@ -195,16 +217,24 @@ export default function CreateJobPage() {
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="space-y-2">
-                            <Label htmlFor="location">Work Location *</Label>
-                            <Input
-                                id="location"
-                                placeholder="e.g., District 7, Ho Chi Minh City"
-                                value={formData.location}
-                                onChange={(e) => updateField("location", e.target.value)}
-                                required
-                            />
-                        </div>
+                        <LocationSelector
+                            value={{
+                                province: formData.province,
+                                city: formData.city,
+                                ward: formData.ward,
+                                address: formData.address,
+                            }}
+                            onChange={(val) => {
+                                setFormData(prev => ({
+                                    ...prev,
+                                    province: val.province,
+                                    city: val.city,
+                                    ward: val.ward,
+                                    address: val.address
+                                }));
+                            }}
+                            required
+                        />
                     </CardContent>
                 </Card>
 

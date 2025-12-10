@@ -20,7 +20,9 @@ import {
     Loader2,
 } from "lucide-react";
 import Link from "next/link";
-import { jobsService, Job as ApiJob, JobType } from "@/services/jobs";
+import { jobsService, Job as ApiJob, JobType, getJobLocationString } from "@/services/jobs";
+import { LocationSelector } from "@/components/shared/LocationSelector";
+import { SearchJobCard, SearchJobCardProps } from "@/components/shared/SearchJobCard";
 
 export interface Job {
     id: string;
@@ -49,7 +51,7 @@ const categoryLabels: Record<string, string> = {
 };
 
 // Transform API job to UI job format
-function transformApiJob(apiJob: ApiJob): Job {
+export function transformApiJob(apiJob: ApiJob): Job {
     const startDate = new Date(apiJob.startDate);
     const endDate = new Date(startDate);
     endDate.setDate(endDate.getDate() + apiJob.durationDays);
@@ -57,8 +59,8 @@ function transformApiJob(apiJob: ApiJob): Job {
     return {
         id: String(apiJob.id),
         title: apiJob.title,
-        company: "Employer", // Would need separate API call
-        location: apiJob.location,
+        company: apiJob.companyName || apiJob.employer?.employerProfile?.companyName || apiJob.employer?.companyName || "Employer",
+        location: getJobLocationString(apiJob),
         duration: `${apiJob.durationDays} days`,
         salary: apiJob.salary ? `${apiJob.salary.toLocaleString()} VND` : "Negotiable",
         salaryType: "",
@@ -77,7 +79,8 @@ interface JobSearchPageProps {
 export function JobSearchPage({ jobs: propJobs }: JobSearchPageProps) {
     const { basePath, isEmployee } = useRole();
     const [searchQuery, setSearchQuery] = useState("");
-    const [locationQuery, setLocationQuery] = useState("");
+    const [locationQuery, setLocationQuery] = useState({ province: "", city: "", ward: "", address: "" });
+    const [tempLocationQuery, setTempLocationQuery] = useState({ province: "", city: "", ward: "", address: "" });
     const [selectedCategory, setSelectedCategory] = useState("All");
     const [savedJobs, setSavedJobs] = useState<string[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -109,9 +112,23 @@ export function JobSearchPage({ jobs: propJobs }: JobSearchPageProps) {
 
     const handleSearch = async () => {
         setIsLoading(true);
+        // Commit the location filter
+        setLocationQuery(tempLocationQuery);
+        
         try {
-            const filters: { location?: string; type?: JobType } = {};
-            if (locationQuery) filters.location = locationQuery;
+            // Use tempLocationQuery for the API call to ensure we use the latest values
+            // (state update might be async)
+            const filters: { 
+                province?: string; 
+                city?: string; 
+                ward?: string;
+                addressContains?: string; 
+                type?: JobType 
+            } = {};
+            
+            if (tempLocationQuery.province) filters.province = tempLocationQuery.province;
+            if (tempLocationQuery.city) filters.city = tempLocationQuery.city;
+            if (tempLocationQuery.ward) filters.ward = tempLocationQuery.ward;
             if (selectedCategory !== "All") filters.type = selectedCategory as JobType;
 
             const response = await jobsService.listJobs(filters);
@@ -127,8 +144,14 @@ export function JobSearchPage({ jobs: propJobs }: JobSearchPageProps) {
     const filteredJobs = jobs.filter(job => {
         const matchesSearch = job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
             job.company.toLowerCase().includes(searchQuery.toLowerCase());
+        
+        const matchesLocation = 
+            (!locationQuery.province || job.location.includes(locationQuery.province)) &&
+            (!locationQuery.city || job.location.includes(locationQuery.city)) &&
+            (!locationQuery.ward || job.location.includes(locationQuery.ward));
+
         const matchesCategory = selectedCategory === "All" || job.category === selectedCategory;
-        return matchesSearch && matchesCategory;
+        return matchesSearch && matchesCategory && matchesLocation;
     });
 
     const toggleSaveJob = (jobId: string) => {
@@ -163,8 +186,8 @@ export function JobSearchPage({ jobs: propJobs }: JobSearchPageProps) {
             {/* Search Bar */}
             <Card>
                 <CardContent className="p-4">
-                    <div className="flex flex-col md:flex-row gap-4">
-                        <div className="flex-1 relative">
+                    <div className="flex flex-col xl:flex-row gap-4 items-start xl:items-center">
+                        <div className="flex-1 relative w-full">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                             <Input
                                 placeholder="Search job title or company..."
@@ -173,16 +196,16 @@ export function JobSearchPage({ jobs: propJobs }: JobSearchPageProps) {
                                 className="pl-10"
                             />
                         </div>
-                        <div className="flex-1 relative">
-                            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                            <Input
-                                placeholder="Location..."
-                                value={locationQuery}
-                                onChange={(e) => setLocationQuery(e.target.value)}
-                                className="pl-10"
+                        <div className="flex-shrink-0 w-full xl:w-auto">
+                            <LocationSelector
+                                value={tempLocationQuery}
+                                onChange={setTempLocationQuery}
+                                showAddress={false}
+                                layout="horizontal"
+                                className="w-full"
                             />
                         </div>
-                        <Button onClick={handleSearch}>
+                        <Button onClick={handleSearch} className="w-full xl:w-auto">
                             <Search className="h-4 w-4 mr-2" />
                             Search
                         </Button>
@@ -227,87 +250,13 @@ export function JobSearchPage({ jobs: propJobs }: JobSearchPageProps) {
                     </div>
                 ) : (
                     filteredJobs.map((job) => (
-                        <Card key={job.id} className="hover:shadow-md transition-shadow">
-                            <CardContent className="p-5">
-                                <div className="flex items-start justify-between gap-4">
-                                    <div className="flex-1 space-y-3">
-                                        {/* Header */}
-                                        <div className="flex items-start justify-between">
-                                            <div>
-                                                <div className="flex items-center gap-2">
-                                                    <Link href={`${basePath}/jobs/${job.id}`}>
-                                                        <h3 className="font-semibold text-lg hover:text-primary transition-colors">
-                                                            {job.title}
-                                                        </h3>
-                                                    </Link>
-                                                    {job.isUrgent && (
-                                                        <Badge variant="destructive" className="text-xs">Urgent</Badge>
-                                                    )}
-                                                </div>
-                                                <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
-                                                    <Building className="h-4 w-4" />
-                                                    <span>{job.company}</span>
-                                                </div>
-                                            </div>
-                                            {/* Save button - only for employee */}
-                                            {isEmployee && (
-                                                <button
-                                                    onClick={() => toggleSaveJob(job.id)}
-                                                    className="p-2 hover:bg-muted rounded-full transition-colors"
-                                                >
-                                                    <Heart
-                                                        className={`h-5 w-5 ${savedJobs.includes(job.id)
-                                                            ? "fill-red-500 text-red-500"
-                                                            : "text-muted-foreground"
-                                                            }`}
-                                                    />
-                                                </button>
-                                            )}
-                                        </div>
-
-                                        {/* Details */}
-                                        <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
-                                            <span className="flex items-center gap-1">
-                                                <MapPin className="h-4 w-4" />
-                                                {job.location}
-                                            </span>
-                                            <span className="flex items-center gap-1">
-                                                <Clock className="h-4 w-4" />
-                                                {job.duration}
-                                            </span>
-                                            <span className="flex items-center gap-1">
-                                                <Calendar className="h-4 w-4" />
-                                                {job.dateRange}
-                                            </span>
-                                        </div>
-
-                                        {/* Description */}
-                                        <p className="text-sm text-muted-foreground line-clamp-2">
-                                            {job.description}
-                                        </p>
-
-                                        {/* Footer */}
-                                        <div className="flex items-center justify-between pt-2">
-                                            <div className="flex items-center gap-1">
-                                                <DollarSign className="h-4 w-4 text-green-600" />
-                                                <span className="font-semibold text-green-600">{job.salary}</span>
-                                                <span className="text-sm text-muted-foreground">/{job.salaryType}</span>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-xs text-muted-foreground">
-                                                    {job.postedDate}
-                                                </span>
-                                                <Link href={`${basePath}/jobs/${job.id}`}>
-                                                    <Button variant="outline" size="small">
-                                                        View Details
-                                                    </Button>
-                                                </Link>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
+                        <SearchJobCard
+                            key={job.id}
+                            job={job}
+                            isSaved={savedJobs.includes(job.id)}
+                            onToggleSave={toggleSaveJob}
+                            showSaveButton={isEmployee}
+                        />
                     ))
                 )}
             </div>

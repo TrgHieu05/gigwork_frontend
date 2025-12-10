@@ -11,8 +11,8 @@ import {
   Loader2,
 } from "lucide-react";
 import { JobCard, JobCardData, JobStatus } from "@/components/feature/employer/JobCard";
-import { jobsService, Job } from "@/services/jobs";
-import { profileService } from "@/services/profile";
+import { jobsService, Job, getJobLocationString } from "@/services/jobs";
+import { authService } from "@/services/auth";
 
 // Types
 type ApplicationHistoryStatus = "pending" | "accepted" | "rejected" | "completed";
@@ -44,17 +44,34 @@ function transformApiJob(apiJob: Job): JobCardData {
   const endDate = new Date(startDate);
   endDate.setDate(endDate.getDate() + apiJob.durationDays);
 
+  // Map API status to UI status (handle potential case mismatch)
+  const apiStatus = apiJob.status?.toLowerCase() || "open";
+  const statusMap: Record<string, JobStatus> = {
+    open: "open",
+    full: "full",
+    ongoing: "ongoing",
+    completed: "completed",
+    closed: "closed",
+    upcoming: "upcoming",
+  };
+
+  // Calculate hired count from applications
+  const hiredCount = Array.isArray(apiJob.applications) 
+    ? apiJob.applications.filter(app => 
+        app.status.toLowerCase() === 'accepted' || app.status.toLowerCase() === 'hired' || app.status.toLowerCase() === 'completed'
+      ).length 
+    : 0;
+
   return {
     id: String(apiJob.id),
     title: apiJob.title,
-    status: (apiJob.status as JobStatus) || "open",
-    location: apiJob.location,
+    status: statusMap[apiStatus] || "open",
+    location: getJobLocationString(apiJob),
     duration: `${apiJob.durationDays} days`,
     salary: apiJob.salary ? `${apiJob.salary.toLocaleString()} VND` : "Negotiable",
     dateRange: `${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}`,
-    applicantsCount: apiJob.workerQuota,
-    hiredCount: 0,
-    viewsCount: 0,
+    applicantsCount: Array.isArray(apiJob.applications) ? apiJob.applications.length : 0,
+    hiredCount: hiredCount,
     postedDate: apiJob.createdAt ? new Date(apiJob.createdAt).toLocaleDateString() : "Recently",
   };
 }
@@ -72,31 +89,58 @@ export default function HistoryPage() {
     const fetchData = async () => {
       setIsLoading(true);
       try {
+        const currentUser = authService.getCurrentUser();
+        if (!currentUser) {
+          setIsLoading(false);
+          return;
+        }
+
         // Fetch jobs from API
         const jobsResponse = await jobsService.listJobs();
-        const transformedJobs = jobsResponse.items.map(transformApiJob);
+        
+        if (!jobsResponse || !Array.isArray(jobsResponse.items)) {
+           console.error("Invalid jobs response", jobsResponse);
+           setJobs([]);
+           setIsLoading(false);
+           return;
+        }
+
+        // Filter jobs by current employer (handle potential type mismatches)
+        // Check both employerId field and nested employer object
+        const myJobs = jobsResponse.items.filter(job => {
+          const matchesId = job.employerId && String(job.employerId) === String(currentUser.id);
+          const matchesEmployerObj = job.employer?.id && String(job.employer.id) === String(currentUser.id);
+          return matchesId || matchesEmployerObj;
+        });
+
+        const transformedJobs = myJobs.map(transformApiJob);
         setJobs(transformedJobs);
 
-        // Get user profile with applications data
-        const profile = await profileService.getCurrentUser();
+        // Derive applications from jobs
+        const allApplications: ApplicationHistory[] = [];
+        
+        myJobs.forEach(job => {
+          if (Array.isArray(job.applications)) {
+            job.applications.forEach(app => {
+              allApplications.push({
+                id: String(app.id),
+                applicantName: app.worker?.name || "Candidate",
+                applicantAvatar: undefined, // Not available in JobApplication
+                jobTitle: job.title,
+                appliedDate: app.createdAt ? new Date(app.createdAt).toLocaleDateString() : "Recently",
+                status: app.status as ApplicationHistoryStatus,
+                salary: job.salary,
+              });
+            });
+          }
+        });
 
-        // Transform applications from profile
-        if (profile.recentApplications) {
-          const apps: ApplicationHistory[] = profile.recentApplications.map((app) => ({
-            id: String(app.applicationId),
-            applicantName: "Candidate", // Name not available in simplified profile view
-            jobTitle: app.jobTitle || "Unknown Job",
-            appliedDate: app.appliedAt ? new Date(app.appliedAt).toLocaleDateString() : "Recently",
-            status: app.status as ApplicationHistoryStatus,
-            salary: undefined, // Salary not available in simplified profile view
-          }));
+        setApplications(allApplications);
 
-          setApplications(apps);
+        // Filter hired employees (accepted or completed applications)
+        const hired = allApplications.filter(a => a.status === "accepted" || a.status === "completed");
+        setHiredEmployees(hired);
 
-          // Filter hired employees (accepted or completed applications)
-          const hired = apps.filter(a => a.status === "accepted" || a.status === "completed");
-          setHiredEmployees(hired);
-        }
       } catch (error) {
         console.error("Error fetching history data:", error);
       } finally {
@@ -155,7 +199,7 @@ export default function HistoryPage() {
             {/* Job List */}
             {filteredJobs.length > 0 ? (
               filteredJobs.map((job) => (
-                <JobCard key={job.id} job={job} variant="compact" isOwner={true} />
+                <JobCard key={job.id} job={job} isOwner={false} />
               ))
             ) : (
               <Card>

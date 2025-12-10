@@ -6,7 +6,9 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { JobCard, JobCardData, JobStatus } from "@/components/feature/employer/JobCard";
 import { Plus, Loader2 } from "lucide-react";
 import Link from "next/link";
-import { jobsService, Job } from "@/services/jobs";
+import { jobsService, Job, getJobLocationString } from "@/services/jobs";
+import { authService } from "@/services/auth";
+import { EditJobModal } from "@/components/feature/employer/EditJobModal";
 
 // Transform API job to JobCardData format
 function transformApiJob(apiJob: Job): JobCardData {
@@ -14,7 +16,8 @@ function transformApiJob(apiJob: Job): JobCardData {
     const endDate = new Date(startDate);
     endDate.setDate(endDate.getDate() + apiJob.durationDays);
 
-    // Map API status to UI status
+    // Map API status to UI status (handle potential case mismatch)
+    const apiStatus = apiJob.status?.toLowerCase() || "open";
     const statusMap: Record<string, JobStatus> = {
         open: "open",
         full: "full",
@@ -22,17 +25,21 @@ function transformApiJob(apiJob: Job): JobCardData {
         completed: "completed",
     };
 
+    // Calculate hired count from applications
+    const hiredCount = apiJob.applications?.filter(app => 
+        app.status.toLowerCase() === 'accepted' || app.status.toLowerCase() === 'hired'
+    ).length || 0;
+
     return {
         id: String(apiJob.id),
         title: apiJob.title,
-        status: statusMap[apiJob.status] || "open",
-        location: apiJob.location,
+        status: statusMap[apiStatus] || "open",
+        location: getJobLocationString(apiJob),
         duration: `${apiJob.durationDays} days`,
-        salary: "$15/hr", // Not in API
+        salary: apiJob.salary ? `${apiJob.salary.toLocaleString()} VND` : "Negotiable",
         dateRange: `${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}`,
-        applicantsCount: apiJob.workerQuota,
-        hiredCount: 0, // Would need additional API
-        viewsCount: 0, // Would need additional API
+        applicantsCount: apiJob.applications?.length || 0,
+        hiredCount: hiredCount,
         postedDate: apiJob.createdAt ? new Date(apiJob.createdAt).toLocaleDateString() : "Recently",
     };
 }
@@ -49,41 +56,29 @@ export default function MyJobsPage() {
     const [activeTab, setActiveTab] = useState<JobStatus | "all">("all");
     const [isLoading, setIsLoading] = useState(true);
     const [jobs, setJobs] = useState<JobCardData[]>([]);
+    const [editingJobId, setEditingJobId] = useState<string | null>(null);
+
+    const fetchJobs = async () => {
+        setIsLoading(true);
+        try {
+            const currentUser = authService.getCurrentUser();
+            if (!currentUser) return;
+
+            // Fetch all jobs from API
+            const response = await jobsService.listJobs();
+            const transformedJobs = response.items
+                .filter(job => job.employerId === currentUser.id)
+                .map(transformApiJob);
+
+            setJobs(transformedJobs);
+        } catch (error) {
+            console.error("Error fetching jobs:", error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     useEffect(() => {
-        const fetchJobs = async () => {
-            setIsLoading(true);
-            try {
-                // Fetch all jobs from API
-                const response = await jobsService.listJobs();
-                const transformedJobs = response.items.map((job) => {
-                    const startDate = new Date(job.startDate);
-                    const endDate = new Date(startDate);
-                    endDate.setDate(endDate.getDate() + job.durationDays);
-
-                    return {
-                        id: String(job.id),
-                        title: job.title,
-                        status: (job.status as JobStatus) || "open",
-                        location: job.location,
-                        duration: `${job.durationDays} days`,
-                        salary: job.salary ? `${job.salary.toLocaleString()} VND` : "Negotiable",
-                        dateRange: `${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}`,
-                        applicantsCount: job.workerQuota,
-                        hiredCount: 0,
-                        viewsCount: 0,
-                        postedDate: job.createdAt ? new Date(job.createdAt).toLocaleDateString() : "Recently",
-                    };
-                });
-
-                setJobs(transformedJobs);
-            } catch (error) {
-                console.error("Error fetching jobs:", error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
         fetchJobs();
     }, []);
 
@@ -92,17 +87,11 @@ export default function MyJobsPage() {
         : jobs.filter((job) => job.status === activeTab);
 
     const handleEdit = (id: string) => {
-        console.log("Edit job:", id);
+        setEditingJobId(id);
     };
 
-    const handleClose = async (id: string) => {
-        try {
-            await jobsService.deleteJob(Number(id));
-            setJobs(jobs.filter(j => j.id !== id));
-        } catch (error) {
-            console.error("Error closing job:", error);
-            alert("Failed to close job");
-        }
+    const handleJobUpdated = () => {
+        fetchJobs();
     };
 
     const handleRepost = (id: string) => {
@@ -160,7 +149,6 @@ export default function MyJobsPage() {
                                     key={job.id}
                                     job={job}
                                     onEdit={handleEdit}
-                                    onClose={handleClose}
                                     onRepost={handleRepost}
                                 />
                             ))
@@ -168,6 +156,12 @@ export default function MyJobsPage() {
                     </div>
                 </TabsContent>
             </Tabs>
+
+            <EditJobModal
+                jobId={editingJobId}
+                onClose={() => setEditingJobId(null)}
+                onJobUpdated={handleJobUpdated}
+            />
         </div>
     );
 }
