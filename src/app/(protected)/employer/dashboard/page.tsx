@@ -13,6 +13,7 @@ import { FileText, Briefcase, Users, Loader2 } from "lucide-react";
 import { authService, getErrorMessage } from "@/services/auth";
 import { profileService, UserProfile } from "@/services/profile";
 import { jobsService, Job as ApiJob } from "@/services/jobs";
+import { applicationsService } from "@/services/applications";
 
 export default function EmployerDashboard() {
   const [isLoading, setIsLoading] = useState(true);
@@ -63,7 +64,21 @@ export default function EmployerDashboard() {
           // Filter jobs by current employer ID
           if (currentUserId) {
             const myJobs = allJobs.filter(job => job.employerId === currentUserId);
-            setJobs(myJobs);
+            
+            // Fetch detailed info for each job to get applications
+            // listJobs API might not return applications or return empty array
+            const detailedJobs = await Promise.all(
+              myJobs.map(async (job) => {
+                try {
+                  return await jobsService.getJob(job.id);
+                } catch (e) {
+                  console.error(`Failed to fetch details for job ${job.id}`, e);
+                  return job;
+                }
+              })
+            );
+            
+            setJobs(detailedJobs);
           } else {
             console.warn("Could not filter jobs: User ID missing");
             setJobs([]);
@@ -81,6 +96,56 @@ export default function EmployerDashboard() {
 
     fetchData();
   }, []);
+
+  const handleAccept = async (applicationId: string) => {
+    try {
+      await applicationsService.accept(Number(applicationId));
+      
+      // Update local state
+      setJobs(currentJobs => currentJobs.map(job => {
+        if (!job.applications) return job;
+        
+        const hasApp = job.applications.some(app => String(app.id) === applicationId);
+        if (hasApp) {
+          return {
+            ...job,
+            applications: job.applications.map(app => 
+              String(app.id) === applicationId ? { ...app, status: "accepted" } : app
+            )
+          };
+        }
+        return job;
+      }));
+    } catch (err) {
+      console.error("Error accepting application:", err);
+      alert("Failed to accept application");
+    }
+  };
+
+  const handleReject = async (applicationId: string) => {
+    try {
+      await applicationsService.reject(Number(applicationId));
+      
+      // Update local state
+      setJobs(currentJobs => currentJobs.map(job => {
+        if (!job.applications) return job;
+        
+        const hasApp = job.applications.some(app => String(app.id) === applicationId);
+        if (hasApp) {
+          return {
+            ...job,
+            applications: job.applications.map(app => 
+              String(app.id) === applicationId ? { ...app, status: "rejected" } : app
+            )
+          };
+        }
+        return job;
+      }));
+    } catch (err) {
+      console.error("Error rejecting application:", err);
+      alert("Failed to reject application");
+    }
+  };
 
   // Transform recent jobs from API to component format
   // Use real jobs data with actual application counts
@@ -164,7 +229,11 @@ export default function EmployerDashboard() {
         <RecentJobsCard jobs={recentJobs} />
 
         {/* Pending Applications */}
-        <PendingApplicationsCard applications={pendingApplications} />
+        <PendingApplicationsCard 
+          applications={pendingApplications} 
+          onApprove={handleAccept}
+          onReject={handleReject}
+        />
       </div>
     </div>
   );

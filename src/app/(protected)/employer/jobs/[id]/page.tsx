@@ -143,6 +143,9 @@ export default function EmployerJobDetailsPage() {
     if (!job) return;
     try {
       await applicationsService.complete(job.id, workerId);
+      setApplications(apps =>
+        apps.map(a => a.workerId === workerId ? { ...a, status: "completed" } : a)
+      );
       alert("Marked as complete!");
     } catch (err) {
       console.error("Error completing:", err);
