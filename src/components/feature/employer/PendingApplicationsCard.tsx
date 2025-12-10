@@ -10,6 +10,7 @@ export interface Application {
     id: string;
     applicantName: string;
     applicantAvatar?: string;
+    workerId?: number; // Added to link to profile
     jobId: string;
     jobTitle: string;
     appliedDate: string;
@@ -54,12 +55,31 @@ export function PendingApplicationsCard({
                             key={app.id}
                             className="flex items-center gap-3 rounded-lg border p-3"
                         >
-                            <Avatar className="h-10 w-10">
-                                <AvatarImage src={app.applicantAvatar} alt={app.applicantName} />
-                                <AvatarFallback>{getInitials(app.applicantName)}</AvatarFallback>
-                            </Avatar>
+                            {/* Clickable Avatar */}
+                            {app.workerId ? (
+                                <Link href={`/profile/employee/${app.workerId}`}>
+                                    <Avatar className="h-10 w-10 cursor-pointer hover:ring-2 hover:ring-primary transition-all">
+                                        <AvatarImage src={app.applicantAvatar} alt={app.applicantName} />
+                                        <AvatarFallback>{getInitials(app.applicantName)}</AvatarFallback>
+                                    </Avatar>
+                                </Link>
+                            ) : (
+                                <Avatar className="h-10 w-10">
+                                    <AvatarImage src={app.applicantAvatar} alt={app.applicantName} />
+                                    <AvatarFallback>{getInitials(app.applicantName)}</AvatarFallback>
+                                </Avatar>
+                            )}
                             <div className="flex-1 min-w-0">
-                                <h4 className="font-medium truncate">{app.applicantName}</h4>
+                                {app.workerId ? (
+                                    <Link
+                                        href={`/profile/employee/${app.workerId}`}
+                                        className="font-medium truncate hover:text-primary transition-colors block"
+                                    >
+                                        {app.applicantName}
+                                    </Link>
+                                ) : (
+                                    <h4 className="font-medium truncate">{app.applicantName}</h4>
+                                )}
                                 <Link
                                     href={`/employer/jobs/${app.jobId}`}
                                     className="text-xs text-muted-foreground hover:text-primary truncate block"
@@ -93,3 +113,4 @@ export function PendingApplicationsCard({
         </Card>
     );
 }
+

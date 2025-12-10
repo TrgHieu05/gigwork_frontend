@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -66,13 +67,13 @@ export default function EmployeeJobDetailsPage() {
             setError(null);
             try {
                 const jobId = Number(params.id);
-                
+
                 // Fetch job details and user profile in parallel
                 const [jobData, userProfile] = await Promise.all([
                     jobsService.getJob(jobId),
                     profileService.getCurrentUser().catch(() => null)
                 ]);
-                
+
                 setJob(jobData);
 
                 // Check if user has applied for this job
@@ -80,7 +81,7 @@ export default function EmployeeJobDetailsPage() {
                     const existingApp = userProfile.recentApplications.find(
                         app => app.jobId === jobId
                     );
-                    
+
                     if (existingApp) {
                         setHasApplied(true);
                         setApplicationStatus(existingApp.status);
@@ -244,9 +245,18 @@ export default function EmployeeJobDetailsPage() {
                                         </div>
                                         <div className="flex items-center gap-1.5 text-muted-foreground mt-1">
                                             <Building className="h-4 w-4" />
-                                            <span className="font-medium">
-                                                {job.companyName || job.employer?.employerProfile?.companyName || "Employer"}
-                                            </span>
+                                            {job.employerId ? (
+                                                <Link
+                                                    href={`/profile/employer/${job.employerId}`}
+                                                    className="font-medium hover:text-primary transition-colors"
+                                                >
+                                                    {job.companyName || job.employer?.employerProfile?.companyName || "Employer"}
+                                                </Link>
+                                            ) : (
+                                                <span className="font-medium">
+                                                    {job.companyName || job.employer?.employerProfile?.companyName || "Employer"}
+                                                </span>
+                                            )}
                                         </div>
                                         <p className="text-muted-foreground mt-1 text-sm">
                                             {typeLabels[job.type] || job.type}

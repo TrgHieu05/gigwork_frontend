@@ -149,6 +149,7 @@ export default function EmployerDashboard() {
       return {
         id: String(app.id),
         applicantName: app.worker?.email?.split('@')[0] || `Worker #${app.workerId}`,
+        workerId: app.workerId, // Pass workerId for profile linking
         jobId: String(app.jobId),
         jobTitle: job?.title || app.job?.title || "Unknown Job",
         appliedDate: app.appliedAt ? new Date(app.appliedAt).toLocaleDateString() : "Recently",

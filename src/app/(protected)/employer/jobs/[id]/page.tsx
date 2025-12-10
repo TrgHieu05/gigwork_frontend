@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -367,13 +368,20 @@ export default function EmployerJobDetailsPage() {
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <Avatar>
-                          <AvatarFallback>
-                            {app.workerName ? app.workerName.slice(0, 2).toUpperCase() : String(app.workerId).slice(0, 2)}
-                          </AvatarFallback>
-                        </Avatar>
+                        <Link href={`/profile/employee/${app.workerId}`}>
+                          <Avatar className="cursor-pointer hover:ring-2 hover:ring-primary transition-all">
+                            <AvatarFallback>
+                              {app.workerName ? app.workerName.slice(0, 2).toUpperCase() : String(app.workerId).slice(0, 2)}
+                            </AvatarFallback>
+                          </Avatar>
+                        </Link>
                         <div>
-                          <p className="font-medium">{app.workerName || `Worker #${app.workerId}`}</p>
+                          <Link
+                            href={`/profile/employee/${app.workerId}`}
+                            className="font-medium hover:text-primary transition-colors"
+                          >
+                            {app.workerName || `Worker #${app.workerId}`}
+                          </Link>
                           <p className="text-sm text-muted-foreground">
                             Applied {new Date(app.appliedAt).toLocaleDateString()}
                           </p>
