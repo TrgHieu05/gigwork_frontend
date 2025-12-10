@@ -12,8 +12,6 @@ import {
 } from "lucide-react";
 import { JobCard, JobCardData, JobStatus } from "@/components/feature/employer/JobCard";
 import { jobsService, Job, getJobLocationString } from "@/services/jobs";
-import { profileService } from "@/services/profile";
-
 import { authService } from "@/services/auth";
 
 // Types
@@ -46,16 +44,34 @@ function transformApiJob(apiJob: Job): JobCardData {
   const endDate = new Date(startDate);
   endDate.setDate(endDate.getDate() + apiJob.durationDays);
 
+  // Map API status to UI status (handle potential case mismatch)
+  const apiStatus = apiJob.status?.toLowerCase() || "open";
+  const statusMap: Record<string, JobStatus> = {
+    open: "open",
+    full: "full",
+    ongoing: "ongoing",
+    completed: "completed",
+    closed: "closed",
+    upcoming: "upcoming",
+  };
+
+  // Calculate hired count from applications
+  const hiredCount = Array.isArray(apiJob.applications) 
+    ? apiJob.applications.filter(app => 
+        app.status.toLowerCase() === 'accepted' || app.status.toLowerCase() === 'hired' || app.status.toLowerCase() === 'completed'
+      ).length 
+    : 0;
+
   return {
     id: String(apiJob.id),
     title: apiJob.title,
-    status: (apiJob.status as JobStatus) || "open",
+    status: statusMap[apiStatus] || "open",
     location: getJobLocationString(apiJob),
     duration: `${apiJob.durationDays} days`,
     salary: apiJob.salary ? `${apiJob.salary.toLocaleString()} VND` : "Negotiable",
     dateRange: `${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}`,
-    applicantsCount: apiJob.workerQuota,
-    hiredCount: 0,
+    applicantsCount: Array.isArray(apiJob.applications) ? apiJob.applications.length : 0,
+    hiredCount: hiredCount,
     postedDate: apiJob.createdAt ? new Date(apiJob.createdAt).toLocaleDateString() : "Recently",
   };
 }
@@ -74,12 +90,29 @@ export default function HistoryPage() {
       setIsLoading(true);
       try {
         const currentUser = authService.getCurrentUser();
-        if (!currentUser) return;
+        if (!currentUser) {
+          setIsLoading(false);
+          return;
+        }
 
         // Fetch jobs from API
         const jobsResponse = await jobsService.listJobs();
-        // Filter jobs by current employer
-        const myJobs = jobsResponse.items.filter(job => job.employerId === currentUser.id);
+        
+        if (!jobsResponse || !Array.isArray(jobsResponse.items)) {
+           console.error("Invalid jobs response", jobsResponse);
+           setJobs([]);
+           setIsLoading(false);
+           return;
+        }
+
+        // Filter jobs by current employer (handle potential type mismatches)
+        // Check both employerId field and nested employer object
+        const myJobs = jobsResponse.items.filter(job => {
+          const matchesId = job.employerId && String(job.employerId) === String(currentUser.id);
+          const matchesEmployerObj = job.employer?.id && String(job.employer.id) === String(currentUser.id);
+          return matchesId || matchesEmployerObj;
+        });
+
         const transformedJobs = myJobs.map(transformApiJob);
         setJobs(transformedJobs);
 
@@ -87,7 +120,7 @@ export default function HistoryPage() {
         const allApplications: ApplicationHistory[] = [];
         
         myJobs.forEach(job => {
-          if (job.applications) {
+          if (Array.isArray(job.applications)) {
             job.applications.forEach(app => {
               allApplications.push({
                 id: String(app.id),
@@ -166,7 +199,7 @@ export default function HistoryPage() {
             {/* Job List */}
             {filteredJobs.length > 0 ? (
               filteredJobs.map((job) => (
-                <JobCard key={job.id} job={job} variant="compact" isOwner={true} />
+                <JobCard key={job.id} job={job} isOwner={false} />
               ))
             ) : (
               <Card>

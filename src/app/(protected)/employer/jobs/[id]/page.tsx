@@ -25,6 +25,18 @@ import {
 import { jobsService, Job, getJobLocationString } from "@/services/jobs";
 import { applicationsService } from "@/services/applications";
 import { profileService } from "@/services/profile";
+import { authService } from "@/services/auth";
+import { EditJobModal } from "@/components/feature/employer/EditJobModal";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const typeLabels: Record<string, string> = {
   physical_work: "Physical Work",
@@ -57,37 +69,50 @@ export default function EmployerJobDetailsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("details");
+  const [isOwner, setIsOwner] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const fetchData = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const jobId = Number(params.id);
+      const jobData = await jobsService.getJob(jobId);
+      setJob(jobData);
+
+      // Check ownership
+      const currentUser = authService.getCurrentUser();
+      if (currentUser && (
+          (jobData.employerId && String(jobData.employerId) === String(currentUser.id)) ||
+          (jobData.employer?.id && String(jobData.employer.id) === String(currentUser.id))
+      )) {
+          setIsOwner(true);
+      }
+
+      // Note: Would need API endpoint for applications by job
+      // For now, using profile data
+      const profile = await profileService.getCurrentUser();
+      // Transform to applications format
+      const apps: Application[] = profile.recentApplications
+        ?.filter(a => a.jobId === jobId)
+        .map(a => ({
+          id: a.applicationId,
+          workerId: 0,
+          status: a.status,
+          appliedAt: a.appliedAt,
+        })) || [];
+      setApplications(apps);
+    } catch (err) {
+      console.error("Error fetching job:", err);
+      setError("Failed to load job details");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const jobId = Number(params.id);
-        const jobData = await jobsService.getJob(jobId);
-        setJob(jobData);
-
-        // Note: Would need API endpoint for applications by job
-        // For now, using profile data
-        const profile = await profileService.getCurrentUser();
-        // Transform to applications format
-        const apps: Application[] = profile.recentApplications
-          ?.filter(a => a.jobId === jobId)
-          .map(a => ({
-            id: a.applicationId,
-            workerId: 0,
-            status: a.status,
-            appliedAt: a.appliedAt,
-          })) || [];
-        setApplications(apps);
-      } catch (err) {
-        console.error("Error fetching job:", err);
-        setError("Failed to load job details");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     if (params.id) {
       fetchData();
     }
@@ -130,14 +155,15 @@ export default function EmployerJobDetailsPage() {
 
   const handleDelete = async () => {
     if (!job) return;
-    if (!confirm("Are you sure you want to delete this job?")) return;
-
+    
+    setIsDeleting(true);
     try {
       await jobsService.deleteJob(job.id);
       router.push("/employer/my-jobs");
     } catch (err) {
       console.error("Error deleting:", err);
       alert("Failed to delete job");
+      setIsDeleting(false);
     }
   };
 
@@ -190,14 +216,18 @@ export default function EmployerJobDetailsPage() {
           </div>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => router.push(`/employer/jobs/${job.id}/edit`)}>
-            <Pencil className="h-4 w-4 mr-2" />
-            Edit
-          </Button>
-          <Button variant="destructive" onClick={handleDelete}>
-            <Trash2 className="h-4 w-4 mr-2" />
-            Delete
-          </Button>
+          {isOwner && (
+            <>
+              <Button variant="outline" onClick={() => setShowEditModal(true)}>
+                <Pencil className="h-4 w-4 mr-2" />
+                Edit
+              </Button>
+              <Button variant="destructive" onClick={() => setShowDeleteDialog(true)}>
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete
+              </Button>
+            </>
+          )}
         </div>
       </div>
 
@@ -277,27 +307,29 @@ export default function EmployerJobDetailsPage() {
               </Card>
 
               {/* Stats */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Statistics</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="text-center p-3 bg-blue-50 rounded-lg">
-                      <p className="text-2xl font-bold text-blue-600">
-                        {applications.length}
-                      </p>
-                      <p className="text-xs text-muted-foreground">Applications</p>
+              {isOwner && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Statistics</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="text-center p-3 bg-blue-50 rounded-lg">
+                        <p className="text-2xl font-bold text-blue-600">
+                          {applications.length}
+                        </p>
+                        <p className="text-xs text-muted-foreground">Applications</p>
+                      </div>
+                      <div className="text-center p-3 bg-green-50 rounded-lg">
+                        <p className="text-2xl font-bold text-green-600">
+                          {acceptedApps.length}
+                        </p>
+                        <p className="text-xs text-muted-foreground">Accepted</p>
+                      </div>
                     </div>
-                    <div className="text-center p-3 bg-green-50 rounded-lg">
-                      <p className="text-2xl font-bold text-green-600">
-                        {acceptedApps.length}
-                      </p>
-                      <p className="text-xs text-muted-foreground">Accepted</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              )}
             </div>
           </div>
         </TabsContent>
@@ -376,6 +408,48 @@ export default function EmployerJobDetailsPage() {
           </div>
         </TabsContent>
       </Tabs>
+
+      {job && (
+        <EditJobModal
+          jobId={showEditModal ? String(job.id) : null}
+          onClose={() => setShowEditModal(false)}
+          onJobUpdated={() => {
+            fetchData();
+            setShowEditModal(false);
+          }}
+        />
+      )}
+
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the job.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                handleDelete();
+              }}
+              className="bg-red-600 hover:bg-red-700"
+              disabled={isDeleting}
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                "Delete"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

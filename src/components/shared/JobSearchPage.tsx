@@ -22,6 +22,7 @@ import {
 import Link from "next/link";
 import { jobsService, Job as ApiJob, JobType, getJobLocationString } from "@/services/jobs";
 import { LocationSelector } from "@/components/shared/LocationSelector";
+import { SearchJobCard, SearchJobCardProps } from "@/components/shared/SearchJobCard";
 
 export interface Job {
     id: string;
@@ -249,87 +250,13 @@ export function JobSearchPage({ jobs: propJobs }: JobSearchPageProps) {
                     </div>
                 ) : (
                     filteredJobs.map((job) => (
-                        <Card key={job.id} className="hover:shadow-md transition-shadow">
-                            <CardContent className="p-5">
-                                <div className="flex items-start justify-between gap-4">
-                                    <div className="flex-1 space-y-3">
-                                        {/* Header */}
-                                        <div className="flex items-start justify-between">
-                                            <div>
-                                                <div className="flex items-center gap-2">
-                                                    <Link href={`${basePath}/jobs/${job.id}`}>
-                                                        <h3 className="font-semibold text-lg hover:text-primary transition-colors">
-                                                            {job.title}
-                                                        </h3>
-                                                    </Link>
-                                                    {job.isUrgent && (
-                                                        <Badge variant="destructive" className="text-xs">Urgent</Badge>
-                                                    )}
-                                                </div>
-                                                <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
-                                                    <Building className="h-4 w-4" />
-                                                    <span>{job.company}</span>
-                                                </div>
-                                            </div>
-                                            {/* Save button - only for employee */}
-                                            {isEmployee && (
-                                                <button
-                                                    onClick={() => toggleSaveJob(job.id)}
-                                                    className="p-2 hover:bg-muted rounded-full transition-colors"
-                                                >
-                                                    <Heart
-                                                        className={`h-5 w-5 ${savedJobs.includes(job.id)
-                                                            ? "fill-red-500 text-red-500"
-                                                            : "text-muted-foreground"
-                                                            }`}
-                                                    />
-                                                </button>
-                                            )}
-                                        </div>
-
-                                        {/* Details */}
-                                        <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
-                                            <span className="flex items-center gap-1">
-                                                <MapPin className="h-4 w-4" />
-                                                {job.location}
-                                            </span>
-                                            <span className="flex items-center gap-1">
-                                                <Clock className="h-4 w-4" />
-                                                {job.duration}
-                                            </span>
-                                            <span className="flex items-center gap-1">
-                                                <Calendar className="h-4 w-4" />
-                                                {job.dateRange}
-                                            </span>
-                                        </div>
-
-                                        {/* Description */}
-                                        <p className="text-sm text-muted-foreground line-clamp-2">
-                                            {job.description}
-                                        </p>
-
-                                        {/* Footer */}
-                                        <div className="flex items-center justify-between pt-2">
-                                            <div className="flex items-center gap-1">
-                                                <DollarSign className="h-4 w-4 text-green-600" />
-                                                <span className="font-semibold text-green-600">{job.salary}</span>
-                                                <span className="text-sm text-muted-foreground">/{job.salaryType}</span>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-xs text-muted-foreground">
-                                                    {job.postedDate}
-                                                </span>
-                                                <Link href={`${basePath}/jobs/${job.id}`}>
-                                                    <Button variant="outline" size="small">
-                                                        View Details
-                                                    </Button>
-                                                </Link>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
+                        <SearchJobCard
+                            key={job.id}
+                            job={job}
+                            isSaved={savedJobs.includes(job.id)}
+                            onToggleSave={toggleSaveJob}
+                            showSaveButton={isEmployee}
+                        />
                     ))
                 )}
             </div>
