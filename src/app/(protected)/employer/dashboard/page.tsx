@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { StatsCard } from "@/components/shared/StatsCard";
 import { RecentJobsCard, Job } from "@/components/feature/employer/RecentJobsCard";
 import {
@@ -9,101 +9,73 @@ import {
 } from "@/components/feature/employer/PendingApplicationsCard";
 import { FileText, Briefcase, Users, Loader2 } from "lucide-react";
 
-// Import services
-import { authService, getErrorMessage } from "@/services/auth";
-import { profileService, UserProfile } from "@/services/profile";
-import { jobsService, Job as ApiJob } from "@/services/jobs";
+// Import services and hooks
+import { authService } from "@/services/auth";
+import { useCurrentUser } from "@/hooks/useProfile";
+import { useJobs } from "@/hooks/useJobs";
 import { applicationsService, JobApplicationFull } from "@/services/applications";
 
 export default function EmployerDashboard() {
-  const [isLoading, setIsLoading] = useState(true);
-  const [userData, setUserData] = useState<UserProfile | null>(null);
+  // Use SWR hooks for cached data
+  const { profile: userData, isLoading: profileLoading } = useCurrentUser();
+  const { jobs: apiJobs, isLoading: jobsLoading } = useJobs();
+
   const [companyName, setCompanyName] = useState("Company");
-  const [jobs, setJobs] = useState<ApiJob[]>([]);
   const [allApplications, setAllApplications] = useState<JobApplicationFull[]>([]);
+  const [isLoadingApps, setIsLoadingApps] = useState(false);
+
+  // Get company name
+  useEffect(() => {
+    const currentUser = authService.getCurrentUser();
+    if (currentUser?.email) {
+      setCompanyName(currentUser.email.split("@")[0]);
+    }
+  }, []);
 
   useEffect(() => {
-    const fetchData = async () => {
-      setIsLoading(true);
+    if (userData?.employerProfile?.companyName) {
+      setCompanyName(userData.employerProfile.companyName);
+    }
+  }, [userData]);
 
-      // Get current user info from local storage (fast, reliable)
+  // Filter jobs by current employer ID
+  const myJobs = useMemo(() => {
+    if (!userData?.id) return [];
+    return apiJobs.filter(job => job.employerId === userData.id);
+  }, [apiJobs, userData?.id]);
+
+  // Fetch applications for my jobs
+  useEffect(() => {
+    if (myJobs.length === 0) return;
+
+    const fetchApplications = async () => {
+      setIsLoadingApps(true);
       try {
-        const currentUser = authService.getCurrentUser();
-        if (currentUser?.email) {
-          setCompanyName(currentUser.email.split("@")[0]);
-        }
-      } catch (e) {
-        console.error("Error getting local user info:", e);
-      }
-
-      // Fetch profile and jobs in parallel
-      try {
-        const [profileResult, jobsResult] = await Promise.allSettled([
-          profileService.getCurrentUser(),
-          jobsService.listJobs()
-        ]);
-
-        let currentUserId: number | undefined;
-
-        // Handle Profile Result
-        if (profileResult.status === 'fulfilled') {
-          const profile = profileResult.value;
-          setUserData(profile);
-          currentUserId = profile.id;
-          if (profile.employerProfile?.companyName) {
-            setCompanyName(profile.employerProfile.companyName);
-          }
-        } else {
-          console.error("Error fetching profile:", getErrorMessage(profileResult.reason));
-        }
-
-        // Handle Jobs Result
-        if (jobsResult.status === 'fulfilled') {
-          const allJobs = jobsResult.value.items;
-
-          // Filter jobs by current employer ID
-          if (currentUserId) {
-            const myJobs = allJobs.filter(job => job.employerId === currentUserId);
-            setJobs(myJobs);
-
-            // Fetch applications for each job using the API
-            const appsResults = await Promise.all(
-              myJobs.map(async (job) => {
-                try {
-                  return await applicationsService.getByJobId(job.id);
-                } catch (e) {
-                  console.error(`Failed to fetch applications for job ${job.id}`, e);
-                  return [];
-                }
-              })
-            );
-
-            // Flatten all applications
-            const allApps = appsResults.flat();
-            setAllApplications(allApps);
-          } else {
-            console.warn("Could not filter jobs: User ID missing");
-            setJobs([]);
-          }
-        } else {
-          console.error("Error fetching jobs:", getErrorMessage(jobsResult.reason));
-        }
-
+        const appsResults = await Promise.all(
+          myJobs.map(async (job) => {
+            try {
+              return await applicationsService.getByJobId(job.id);
+            } catch (e) {
+              console.error(`Failed to fetch applications for job ${job.id}`, e);
+              return [];
+            }
+          })
+        );
+        const allApps = appsResults.flat();
+        setAllApplications(allApps);
       } catch (error) {
-        console.error("Unexpected error in dashboard data fetch:", error);
+        console.error("Error fetching applications:", error);
       } finally {
-        setIsLoading(false);
+        setIsLoadingApps(false);
       }
     };
 
-    fetchData();
-  }, []);
+    fetchApplications();
+  }, [myJobs]);
 
   const handleAccept = async (applicationId: string) => {
     try {
       await applicationsService.accept(Number(applicationId));
-
-      // Update local state
       setAllApplications(currentApps =>
         currentApps.map(app =>
           String(app.id) === applicationId ? { ...app, status: "accepted" as const } : app
@@ -118,8 +90,6 @@ export default function EmployerDashboard() {
   const handleReject = async (applicationId: string) => {
     try {
       await applicationsService.reject(Number(applicationId));
-
-      // Update local state
       setAllApplications(currentApps =>
         currentApps.map(app =>
           String(app.id) === applicationId ? { ...app, status: "cancelled" as const } : app
@@ -132,37 +102,42 @@ export default function EmployerDashboard() {
   };
 
   // Transform recent jobs from API to component format
-  const recentJobs: Job[] = jobs.slice(0, 5).map((job) => ({
-    id: String(job.id),
-    title: job.title,
-    status: job.status === "open" ? "active" : job.status === "completed" ? "closed" : "active",
-    postedDate: new Date(job.startDate).toLocaleDateString("en-GB"),
-    applicationsCount: allApplications.filter(app => app.jobId === job.id).length,
-  }));
+  const recentJobs: Job[] = useMemo(() => {
+    return myJobs.slice(0, 5).map((job) => ({
+      id: String(job.id),
+      title: job.title,
+      status: job.status === "open" ? "active" : job.status === "completed" ? "closed" : "active",
+      postedDate: new Date(job.startDate).toLocaleDateString("en-GB"),
+      applicationsCount: allApplications.filter(app => app.jobId === job.id).length,
+    }));
+  }, [myJobs, allApplications]);
 
   // Transform applications from API
-  const pendingApplications: Application[] = allApplications
-    .filter((app) => app.status === "pending")
-    .slice(0, 5)
-    .map((app) => {
-      const job = jobs.find(j => j.id === app.jobId);
-      return {
-        id: String(app.id),
-        applicantName: app.worker?.email?.split('@')[0] || `Worker #${app.workerId}`,
-        workerId: app.workerId, // Pass workerId for profile linking
-        jobId: String(app.jobId),
-        jobTitle: job?.title || app.job?.title || "Unknown Job",
-        appliedDate: app.appliedAt ? new Date(app.appliedAt).toLocaleDateString() : "Recently",
-      };
-    });
+  const pendingApplications: Application[] = useMemo(() => {
+    return allApplications
+      .filter((app) => app.status === "pending")
+      .slice(0, 5)
+      .map((app) => {
+        const job = myJobs.find(j => j.id === app.jobId);
+        return {
+          id: String(app.id),
+          applicantName: app.worker?.email?.split('@')[0] || `Worker #${app.workerId}`,
+          workerId: app.workerId,
+          jobId: String(app.jobId),
+          jobTitle: job?.title || app.job?.title || "Unknown Job",
+          appliedDate: app.appliedAt ? new Date(app.appliedAt).toLocaleDateString() : "Recently",
+        };
+      });
+  }, [allApplications, myJobs]);
 
   // Calculate stats
   const totalApplications = allApplications.length;
-  const jobsPosted = jobs.length;
+  const jobsPosted = myJobs.length;
   const employeesHired = allApplications.filter(a => a.status === "accepted" || a.status === "completed").length;
-  const openJobs = jobs.filter((job) => job.status === "open").length;
+  const openJobs = myJobs.filter((job) => job.status === "open").length;
 
-  if (isLoading) {
+  // Only show loading on first load (no cached data)
+  if ((profileLoading || jobsLoading) && !userData && myJobs.length === 0) {
     return (
       <div className="h-full flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />

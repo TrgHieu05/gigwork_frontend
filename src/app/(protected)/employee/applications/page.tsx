@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState, useMemo } from "react";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Loader2, Clock, CheckCircle, XCircle, AlertCircle } from "lucide-react";
-import { profileService, UserProfile } from "@/services/profile";
+import { useCurrentUser } from "@/hooks/useProfile";
 import { applicationsService } from "@/services/applications";
 import Link from "next/link";
 
@@ -29,51 +29,27 @@ const statusConfig: Record<ApplicationStatus, { color: string; bg: string; icon:
 };
 
 export default function EmployeeApplicationsPage() {
-    const [isLoading, setIsLoading] = useState(true);
-    const [applications, setApplications] = useState<Application[]>([]);
+    // Use SWR hook for cached profile data
+    const { profile: userData, isLoading, mutate } = useCurrentUser();
     const [activeTab, setActiveTab] = useState("all");
-    const [userData, setUserData] = useState<UserProfile | null>(null);
 
-    useEffect(() => {
-        const fetchApplications = async () => {
-            setIsLoading(true);
-            try {
-                const profile = await profileService.getCurrentUser();
-                setUserData(profile);
-
-                // Transform recentApplications to our format
-                const apps: Application[] = profile.recentApplications?.map((app) => ({
-                    id: String(app.applicationId),
-                    jobId: String(app.jobId || 0),
-                    jobTitle: app.jobTitle || "Unknown Job",
-                    status: (app.status.charAt(0).toUpperCase() + app.status.slice(1)) as ApplicationStatus,
-                    appliedAt: app.appliedAt,
-                })) || [];
-
-                setApplications(apps);
-            } catch (error) {
-                console.error("Error fetching applications:", error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        fetchApplications();
-    }, []);
+    // Transform applications from profile data
+    const applications: Application[] = useMemo(() => {
+        if (!userData?.recentApplications) return [];
+        return userData.recentApplications.map((app) => ({
+            id: String(app.applicationId),
+            jobId: String(app.jobId || 0),
+            jobTitle: app.jobTitle || "Unknown Job",
+            status: (app.status.charAt(0).toUpperCase() + app.status.slice(1)) as ApplicationStatus,
+            appliedAt: app.appliedAt,
+        }));
+    }, [userData?.recentApplications]);
 
     const handleConfirmPayment = async (applicationId: string) => {
         try {
             await applicationsService.completePaid(Number(applicationId));
-            // Refresh data
-            const profile = await profileService.getCurrentUser();
-            const apps: Application[] = profile.recentApplications?.map((app) => ({
-                id: String(app.applicationId),
-                jobId: String(app.jobId || 0),
-                jobTitle: app.jobTitle || "Unknown Job",
-                status: (app.status.charAt(0).toUpperCase() + app.status.slice(1)) as ApplicationStatus,
-                appliedAt: app.appliedAt,
-            })) || [];
-            setApplications(apps);
+            // Revalidate the profile data to reflect changes
+            mutate();
         } catch (error) {
             console.error("Error confirming payment:", error);
             alert("Failed to confirm payment");
@@ -90,7 +66,8 @@ export default function EmployeeApplicationsPage() {
         completed: applications.filter(a => a.status === "Completed").length,
     };
 
-    if (isLoading) {
+    // Only show loading on first load (no cached data)
+    if (isLoading && !userData) {
         return (
             <div className="h-full flex items-center justify-center">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />

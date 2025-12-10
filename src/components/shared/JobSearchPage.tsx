@@ -1,28 +1,21 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { useRole } from "@/contexts/RoleContext";
 import {
     Search,
-    MapPin,
-    Clock,
-    DollarSign,
-    Calendar,
     Briefcase,
     Filter,
     ChevronDown,
-    Heart,
-    Building,
     Loader2,
 } from "lucide-react";
-import Link from "next/link";
 import { jobsService, Job as ApiJob, JobType, getJobLocationString } from "@/services/jobs";
+import { useJobs } from "@/hooks/useJobs";
 import { LocationSelector } from "@/components/shared/LocationSelector";
-import { SearchJobCard, SearchJobCardProps } from "@/components/shared/SearchJobCard";
+import { SearchJobCard } from "@/components/shared/SearchJobCard";
 
 export interface Job {
     id: string;
@@ -83,69 +76,36 @@ export function JobSearchPage({ jobs: propJobs }: JobSearchPageProps) {
     const [tempLocationQuery, setTempLocationQuery] = useState({ province: "", city: "", ward: "", address: "" });
     const [selectedCategory, setSelectedCategory] = useState("All");
     const [savedJobs, setSavedJobs] = useState<string[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [jobs, setJobs] = useState<Job[]>([]);
+    const [filters, setFilters] = useState<{ province?: string; city?: string; ward?: string; type?: JobType }>({});
 
-    useEffect(() => {
-        const fetchJobs = async () => {
-            if (propJobs) {
-                setJobs(propJobs);
-                setIsLoading(false);
-                return;
-            }
+    // Use SWR hook for cached jobs data
+    const { jobs: apiJobs, isLoading, mutate } = useJobs(Object.keys(filters).length > 0 ? filters : undefined);
 
-            setIsLoading(true);
-            try {
-                const response = await jobsService.listJobs();
-                const transformedJobs = response.items.map(transformApiJob);
-                setJobs(transformedJobs);
-            } catch (error) {
-                console.error("Error fetching jobs:", error);
-                setJobs([]);
-            } finally {
-                setIsLoading(false);
-            }
-        };
+    // Transform API jobs to UI format (memoized)
+    const jobs: Job[] = useMemo(() => {
+        if (propJobs) return propJobs;
+        return apiJobs.map(transformApiJob);
+    }, [propJobs, apiJobs]);
 
-        fetchJobs();
-    }, [propJobs]);
-
-    const handleSearch = async () => {
-        setIsLoading(true);
+    const handleSearch = () => {
         // Commit the location filter
         setLocationQuery(tempLocationQuery);
-        
-        try {
-            // Use tempLocationQuery for the API call to ensure we use the latest values
-            // (state update might be async)
-            const filters: { 
-                province?: string; 
-                city?: string; 
-                ward?: string;
-                addressContains?: string; 
-                type?: JobType 
-            } = {};
-            
-            if (tempLocationQuery.province) filters.province = tempLocationQuery.province;
-            if (tempLocationQuery.city) filters.city = tempLocationQuery.city;
-            if (tempLocationQuery.ward) filters.ward = tempLocationQuery.ward;
-            if (selectedCategory !== "All") filters.type = selectedCategory as JobType;
 
-            const response = await jobsService.listJobs(filters);
-            const transformedJobs = response.items.map(transformApiJob);
-            setJobs(transformedJobs);
-        } catch (error) {
-            console.error("Error searching jobs:", error);
-        } finally {
-            setIsLoading(false);
-        }
+        // Build filters for API
+        const newFilters: { province?: string; city?: string; ward?: string; type?: JobType } = {};
+        if (tempLocationQuery.province) newFilters.province = tempLocationQuery.province;
+        if (tempLocationQuery.city) newFilters.city = tempLocationQuery.city;
+        if (tempLocationQuery.ward) newFilters.ward = tempLocationQuery.ward;
+        if (selectedCategory !== "All") newFilters.type = selectedCategory as JobType;
+
+        setFilters(newFilters);
     };
 
     const filteredJobs = jobs.filter(job => {
         const matchesSearch = job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
             job.company.toLowerCase().includes(searchQuery.toLowerCase());
-        
-        const matchesLocation = 
+
+        const matchesLocation =
             (!locationQuery.province || job.location.includes(locationQuery.province)) &&
             (!locationQuery.city || job.location.includes(locationQuery.city)) &&
             (!locationQuery.ward || job.location.includes(locationQuery.ward));
@@ -162,7 +122,8 @@ export function JobSearchPage({ jobs: propJobs }: JobSearchPageProps) {
         );
     };
 
-    if (isLoading) {
+    // Only show loading on first load (no cached data)
+    if (isLoading && jobs.length === 0 && !propJobs) {
         return (
             <div className="h-full flex items-center justify-center">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />

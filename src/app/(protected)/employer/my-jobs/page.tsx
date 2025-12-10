@@ -1,14 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { JobCard, JobCardData, JobStatus } from "@/components/feature/employer/JobCard";
 import { Plus, Loader2 } from "lucide-react";
 import Link from "next/link";
-import { jobsService, Job, getJobLocationString } from "@/services/jobs";
+import { Job, getJobLocationString } from "@/services/jobs";
 import { applicationsService, JobApplicationFull } from "@/services/applications";
-import { authService } from "@/services/auth";
+import { useCurrentUser } from "@/hooks/useProfile";
+import { useJobs } from "@/hooks/useJobs";
 import { EditJobModal } from "@/components/feature/employer/EditJobModal";
 
 // Transform API job to JobCardData format with applications data
@@ -17,7 +18,6 @@ function transformApiJob(apiJob: Job, applications: JobApplicationFull[]): JobCa
     const endDate = new Date(startDate);
     endDate.setDate(endDate.getDate() + apiJob.durationDays);
 
-    // Map API status to UI status (handle potential case mismatch)
     const apiStatus = apiJob.status?.toLowerCase() || "open";
     const statusMap: Record<string, JobStatus> = {
         open: "open",
@@ -26,7 +26,6 @@ function transformApiJob(apiJob: Job, applications: JobApplicationFull[]): JobCa
         completed: "completed",
     };
 
-    // Calculate hired count from applications
     const hiredCount = applications.filter(app =>
         app.status.toLowerCase() === 'accepted' || app.status.toLowerCase() === 'hired'
     ).length;
@@ -55,46 +54,51 @@ const tabs: { value: JobStatus | "all"; label: string }[] = [
 
 export default function MyJobsPage() {
     const [activeTab, setActiveTab] = useState<JobStatus | "all">("all");
-    const [isLoading, setIsLoading] = useState(true);
-    const [jobs, setJobs] = useState<JobCardData[]>([]);
     const [editingJobId, setEditingJobId] = useState<string | null>(null);
+    const [jobs, setJobs] = useState<JobCardData[]>([]);
+    const [isLoadingApps, setIsLoadingApps] = useState(false);
 
-    const fetchJobs = async () => {
-        setIsLoading(true);
-        try {
-            const currentUser = authService.getCurrentUser();
-            if (!currentUser) return;
+    // Use SWR hooks for cached data
+    const { profile: userData, isLoading: profileLoading } = useCurrentUser();
+    const { jobs: apiJobs, isLoading: jobsLoading, mutate: mutateJobs } = useJobs();
 
-            // Fetch all jobs from API
-            const response = await jobsService.listJobs();
+    // Filter jobs by current employer
+    const myJobs = useMemo(() => {
+        if (!userData?.id) return [];
+        return apiJobs.filter(job => job.employerId === userData.id);
+    }, [apiJobs, userData?.id]);
 
-            // Filter jobs by current employer
-            const myJobs = response.items.filter(job => job.employerId === currentUser.id);
-
-            // Fetch applications for each job using the new API
-            const jobsWithApps = await Promise.all(
-                myJobs.map(async (job) => {
-                    try {
-                        const apps = await applicationsService.getByJobId(job.id);
-                        return transformApiJob(job, apps);
-                    } catch (e) {
-                        console.error(`Failed to fetch applications for job ${job.id}`, e);
-                        return transformApiJob(job, []);
-                    }
-                })
-            );
-
-            setJobs(jobsWithApps);
-        } catch (error) {
-            console.error("Error fetching jobs:", error);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
+    // Fetch applications and transform jobs
     useEffect(() => {
-        fetchJobs();
-    }, []);
+        if (myJobs.length === 0) {
+            setJobs([]);
+            return;
+        }
+
+        const fetchApplications = async () => {
+            setIsLoadingApps(true);
+            try {
+                const jobsWithApps = await Promise.all(
+                    myJobs.map(async (job) => {
+                        try {
+                            const apps = await applicationsService.getByJobId(job.id);
+                            return transformApiJob(job, apps);
+                        } catch (e) {
+                            console.error(`Failed to fetch applications for job ${job.id}`, e);
+                            return transformApiJob(job, []);
+                        }
+                    })
+                );
+                setJobs(jobsWithApps);
+            } catch (error) {
+                console.error("Error fetching applications:", error);
+            } finally {
+                setIsLoadingApps(false);
+            }
+        };
+
+        fetchApplications();
+    }, [myJobs]);
 
     const filteredJobs = activeTab === "all"
         ? jobs
@@ -104,15 +108,16 @@ export default function MyJobsPage() {
         setEditingJobId(id);
     };
 
-    const handleJobUpdated = () => {
-        fetchJobs();
-    };
+    const handleJobUpdated = useCallback(() => {
+        mutateJobs(); // Revalidate jobs cache
+    }, [mutateJobs]);
 
     const handleRepost = (id: string) => {
         console.log("Repost job:", id);
     };
 
-    if (isLoading) {
+    // Only show loading on first load (no cached data)
+    if ((profileLoading || jobsLoading) && myJobs.length === 0) {
         return (
             <div className="h-full flex items-center justify-center">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />

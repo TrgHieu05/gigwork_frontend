@@ -11,37 +11,40 @@ import { EmployeeStatsCard } from "@/components/feature/employee/EmployeeStatsCa
 import { EmployeeJobCard, type EmployeeJob } from "@/components/feature/employee/EmployeeJobCard";
 import { EmployeeApplicationCard, type EmployeeApplication } from "@/components/feature/employee/EmployeeApplicationCard";
 
-// Import services
+// Import services and hooks
 import { authService } from "@/services/auth";
-import { profileService, UserProfile } from "@/services/profile";
+import { useCurrentUser } from "@/hooks/useProfile";
 import { formatJobLocation, jobsService, Job } from "@/services/jobs";
 
 export default function EmployeeDashboard() {
-    const [isLoading, setIsLoading] = useState(true);
-    const [userData, setUserData] = useState<UserProfile | null>(null);
+    // Use SWR hook for profile data - enables caching and instant display
+    const { profile: userData, isLoading: profileLoading } = useCurrentUser();
+
     const [userName, setUserName] = useState("User");
     const [activeJobs, setActiveJobs] = useState<EmployeeJob[]>([]);
     const [recentApplications, setRecentApplications] = useState<EmployeeApplication[]>([]);
     const [jobDetailsMap, setJobDetailsMap] = useState<Map<number, Job>>(new Map());
+    const [isProcessing, setIsProcessing] = useState(false);
 
+    // Get username from localStorage
     useEffect(() => {
-        const fetchData = async () => {
-            setIsLoading(true);
+        const currentUser = authService.getCurrentUser();
+        if (currentUser?.email) {
+            setUserName(currentUser.email.split("@")[0]);
+        }
+    }, []);
+
+    // Process user data when profile is loaded (fetch job details for enrichment)
+    useEffect(() => {
+        if (!userData) return;
+
+        const processData = async () => {
+            setIsProcessing(true);
             try {
-                // Get current user info from localStorage
-                const currentUser = authService.getCurrentUser();
-                if (currentUser?.email) {
-                    setUserName(currentUser.email.split("@")[0]);
-                }
-
-                // Fetch full user data including stats
-                const profile = await profileService.getCurrentUser();
-                setUserData(profile);
-
                 // Fetch job details to get company names and durationDays
                 const jobIds = new Set<number>();
-                profile.recentJobs?.forEach(j => jobIds.add(j.id));
-                profile.recentApplications?.forEach(a => {
+                userData.recentJobs?.forEach(j => jobIds.add(j.id));
+                userData.recentApplications?.forEach(a => {
                     if (a.jobId) jobIds.add(a.jobId);
                 });
 
@@ -65,7 +68,7 @@ export default function EmployeeDashboard() {
                 setJobDetailsMap(detailsMap);
 
                 // Transform recent applications from API with enriched data
-                const apps: EmployeeApplication[] = profile.recentApplications?.map((app) => {
+                const apps: EmployeeApplication[] = userData.recentApplications?.map((app) => {
                     const jobDetail = app.jobId ? detailsMap.get(app.jobId) : null;
                     const companyName = jobDetail?.companyName || jobDetail?.employer?.employerProfile?.companyName || jobDetail?.employer?.companyName || "Employer";
 
@@ -87,7 +90,7 @@ export default function EmployeeDashboard() {
                 const currentMonth = now.getMonth();
                 const currentYear = now.getFullYear();
 
-                const completedJobs = profile.recentJobs?.filter(j => j.status === 'completed' || j.status === 'finished') || [];
+                const completedJobs = userData.recentJobs?.filter(j => j.status === 'completed' || j.status === 'finished') || [];
 
                 // Calculate earned amount from completed jobs
                 const earnedAmount = completedJobs.reduce((sum, job) => sum + (job.salary || 0), 0);
@@ -100,7 +103,7 @@ export default function EmployeeDashboard() {
 
                 // Transform recent jobs from API with enriched data
                 // Filter for active jobs only (not completed/cancelled)
-                const activeJobsList: EmployeeJob[] = profile.recentJobs
+                const activeJobsList: EmployeeJob[] = userData.recentJobs
                     ?.filter(job => job.status !== 'completed' && job.status !== 'cancelled' && job.status !== 'finished')
                     .map((job) => {
                         const jobDetail = detailsMap.get(job.id);
@@ -131,13 +134,13 @@ export default function EmployeeDashboard() {
                 // Update stats
                 setStats({
                     applications: {
-                        count: profile.applicationCounts
-                            ? Object.values(profile.applicationCounts).reduce((a, b) => a + b, 0)
+                        count: userData.applicationCounts
+                            ? Object.values(userData.applicationCounts).reduce((a, b) => a + b, 0)
                             : 0,
-                        pending: profile.applicationCounts?.pending ?? 0,
+                        pending: userData.applicationCounts?.pending ?? 0,
                     },
                     jobsCompleted: {
-                        count: profile.applicationCounts?.completed ?? 0,
+                        count: userData.applicationCounts?.completed ?? 0,
                         thisMonth: completedThisMonthCount,
                     },
                     totalEarned: {
@@ -147,14 +150,14 @@ export default function EmployeeDashboard() {
                 });
 
             } catch (error) {
-                console.error("Error fetching dashboard data:", error);
+                console.error("Error processing dashboard data:", error);
             } finally {
-                setIsLoading(false);
+                setIsProcessing(false);
             }
         };
 
-        fetchData();
-    }, []);
+        processData();
+    }, [userData]);
 
     // Initial stats state (will be updated by useEffect)
     const [stats, setStats] = useState({
@@ -181,7 +184,6 @@ export default function EmployeeDashboard() {
             const jobDetail = app.jobId ? jobDetailsMap.get(app.jobId) : null;
 
             if (!jobDetail) {
-                console.log('No job detail found for application:', app.applicationId, 'jobId:', app.jobId);
                 return;
             }
 
@@ -226,7 +228,8 @@ export default function EmployeeDashboard() {
         return Array.from(dayJobMap.values());
     }, [userData?.recentApplications, jobDetailsMap]);
 
-    if (isLoading) {
+    // Show loading only on first load (no cached data)
+    if (profileLoading && !userData) {
         return (
             <div className="h-full flex items-center justify-center">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
