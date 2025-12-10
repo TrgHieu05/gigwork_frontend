@@ -15,6 +15,14 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import {
     ArrowLeft,
     Briefcase,
     MapPin,
@@ -22,6 +30,7 @@ import {
     Loader2,
     Users,
     Calendar,
+    AlertCircle,
 } from "lucide-react";
 import { jobsService, JobType } from "@/services/jobs";
 import { LocationSelector } from "@/components/shared/LocationSelector";
@@ -53,6 +62,7 @@ export default function CreateJobPage() {
     const router = useRouter();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [showProfileRequiredModal, setShowProfileRequiredModal] = useState(false);
     const [formData, setFormData] = useState<JobFormData>({
         title: "",
         description: "",
@@ -126,8 +136,15 @@ export default function CreateJobPage() {
             });
 
             router.push("/employer/my-jobs");
-        } catch (err) {
+        } catch (err: any) {
             console.error("Error creating job:", err);
+
+            // Check for specific 403 error from backend
+            if (err.response?.status === 403 && err.response?.data?.detail === "Employer profile required") {
+                setShowProfileRequiredModal(true);
+                return;
+            }
+
             setError("Failed to create job. Please try again.");
         } finally {
             setIsSubmitting(false);
@@ -354,6 +371,28 @@ export default function CreateJobPage() {
                     </Button>
                 </div>
             </form>
+
+            <Dialog open={showProfileRequiredModal} onOpenChange={setShowProfileRequiredModal}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2 text-destructive">
+                            <AlertCircle className="h-5 w-5" />
+                            Profile Update Required
+                        </DialogTitle>
+                        <DialogDescription className="pt-2">
+                            To post jobs, you need to complete your employer profile first. Please update your company information.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setShowProfileRequiredModal(false)}>
+                            Cancel
+                        </Button>
+                        <Button onClick={() => router.push('/employer/profile')}>
+                            Go to Profile
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

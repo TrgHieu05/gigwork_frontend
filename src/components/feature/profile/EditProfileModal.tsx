@@ -113,10 +113,18 @@ export function EditProfileModal({
             }
 
             if (isEmployer) {
-                await profileService.updateEmployerProfile({
-                    companyName: companyName || undefined,
-                    companyAddress: companyAddress || undefined,
-                });
+                if (profile.employerProfile) {
+                    await profileService.updateEmployerProfile({
+                        companyName: companyName || undefined,
+                        companyAddress: companyAddress || undefined,
+                    });
+                } else {
+                    // If no existing employer profile, create new one
+                    await profileService.createEmployerProfile({
+                        companyName: companyName,
+                        companyAddress: companyAddress || undefined,
+                    });
+                }
             }
 
             // Fetch updated profile

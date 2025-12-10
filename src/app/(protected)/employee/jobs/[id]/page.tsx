@@ -7,6 +7,14 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import {
     ArrowLeft,
     MapPin,
     Clock,
@@ -48,6 +56,7 @@ export default function EmployeeJobDetailsPage() {
     const [isApplying, setIsApplying] = useState(false);
     const [hasApplied, setHasApplied] = useState(false);
     const [isSaved, setIsSaved] = useState(false);
+    const [showSuccessModal, setShowSuccessModal] = useState(false);
 
     useEffect(() => {
         const fetchJob = async () => {
@@ -77,7 +86,7 @@ export default function EmployeeJobDetailsPage() {
         try {
             await applicationsService.apply(job.id);
             setHasApplied(true);
-            alert("Application submitted successfully!");
+            setShowSuccessModal(true);
         } catch (err: unknown) {
             console.error("Error applying:", err);
             // Extract error message from API response
@@ -320,6 +329,33 @@ export default function EmployeeJobDetailsPage() {
                     </Card>
                 </div>
             </div>
+
+            <Dialog open={showSuccessModal} onOpenChange={setShowSuccessModal}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <CheckCircle className="h-5 w-5 text-green-500" />
+                            Application Submitted!
+                        </DialogTitle>
+                        <DialogDescription className="pt-2">
+                            You have successfully applied for <strong>{job.title}</strong> at <strong>{job.companyName || job.employer?.employerProfile?.companyName || "Employer"}</strong>.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="py-2">
+                        <p className="text-sm text-muted-foreground">
+                            The employer has been notified of your application. You can track the status in your dashboard.
+                        </p>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setShowSuccessModal(false)}>
+                            Close
+                        </Button>
+                        <Button onClick={() => router.push('/employee/dashboard')}>
+                            Go to Dashboard
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

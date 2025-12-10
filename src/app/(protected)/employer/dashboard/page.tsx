@@ -41,10 +41,13 @@ export default function EmployerDashboard() {
           jobsService.listJobs()
         ]);
 
+        let currentUserId: number | undefined;
+
         // Handle Profile Result
         if (profileResult.status === 'fulfilled') {
           const profile = profileResult.value;
           setUserData(profile);
+          currentUserId = profile.id;
           if (profile.employerProfile?.companyName) {
             setCompanyName(profile.employerProfile.companyName);
           }
@@ -55,7 +58,16 @@ export default function EmployerDashboard() {
 
         // Handle Jobs Result
         if (jobsResult.status === 'fulfilled') {
-          setJobs(jobsResult.value.items);
+          const allJobs = jobsResult.value.items;
+          
+          // Filter jobs by current employer ID
+          if (currentUserId) {
+            const myJobs = allJobs.filter(job => job.employerId === currentUserId);
+            setJobs(myJobs);
+          } else {
+            console.warn("Could not filter jobs: User ID missing");
+            setJobs([]);
+          }
         } else {
           console.error("Error fetching jobs:", getErrorMessage(jobsResult.reason));
         }

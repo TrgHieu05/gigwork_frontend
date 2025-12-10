@@ -55,8 +55,13 @@ export default function CreateJobPage() {
                 type: formData.type,
             });
             router.push("/employer/my-jobs");
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error creating job:", error);
+            if (error.response?.status === 403 && error.response?.data?.detail === "Employer profile required") {
+                alert("You need to complete your employer profile first. Please go to your profile settings.");
+                router.push("/employer/profile");
+                return;
+            }
             alert("Failed to create job. Please try again.");
         } finally {
             setIsSubmitting(false);
