@@ -9,6 +9,7 @@ import {
   Settings,
   LogOut,
   User,
+  Star,
 } from "lucide-react";
 import {
   Sidebar,
@@ -41,6 +42,11 @@ const itemsTop = [
     title: "History",
     url: "/employee/history",
     icon: History,
+  },
+  {
+    title: "Reviews",
+    url: "/employee/reviews",
+    icon: Star,
   },
   {
     title: "Notification",
