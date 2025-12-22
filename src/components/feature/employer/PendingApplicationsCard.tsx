@@ -57,7 +57,7 @@ export function PendingApplicationsCard({
                         >
                             {/* Clickable Avatar */}
                             {app.workerId ? (
-                                <Link href={`/profile/employee/${app.workerId}`}>
+                                <Link href={`/profile/employee/${app.workerId}?name=${encodeURIComponent(app.applicantName)}`}>
                                     <Avatar className="h-10 w-10 cursor-pointer hover:ring-2 hover:ring-primary transition-all">
                                         <AvatarImage src={app.applicantAvatar} alt={app.applicantName} />
                                         <AvatarFallback>{getInitials(app.applicantName)}</AvatarFallback>
@@ -72,7 +72,7 @@ export function PendingApplicationsCard({
                             <div className="flex-1 min-w-0">
                                 {app.workerId ? (
                                     <Link
-                                        href={`/profile/employee/${app.workerId}`}
+                                        href={`/profile/employee/${app.workerId}?name=${encodeURIComponent(app.applicantName)}`}
                                         className="font-medium truncate hover:text-primary transition-colors block"
                                     >
                                         {app.applicantName}

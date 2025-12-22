@@ -7,9 +7,8 @@ import { MessageSquare, X, Star } from "lucide-react";
 interface CommentModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSubmit: (comment: string, rating?: number) => void;
+    onSubmit: (comment: string) => void;
     recipientName: string;
-    showRating?: boolean;
     title?: string;
 }
 
@@ -18,20 +17,16 @@ export function CommentModal({
     onClose,
     onSubmit,
     recipientName,
-    showRating = false,
     title = "Leave a Comment",
 }: CommentModalProps) {
     const [comment, setComment] = useState("");
-    const [rating, setRating] = useState(0);
-    const [hoveredRating, setHoveredRating] = useState(0);
 
     if (!isOpen) return null;
 
     const handleSubmit = () => {
         if (comment.trim()) {
-            onSubmit(comment, showRating ? rating : undefined);
+            onSubmit(comment);
             setComment("");
-            setRating(0);
             onClose();
         }
     };
@@ -64,32 +59,6 @@ export function CommentModal({
                 <p className="text-sm text-muted-foreground mb-4">
                     Sending comment to <span className="font-medium text-foreground">{recipientName}</span>
                 </p>
-
-                {/* Rating (optional) */}
-                {showRating && (
-                    <div className="mb-4">
-                        <p className="text-sm font-medium mb-2">Rating</p>
-                        <div className="flex gap-1">
-                            {[1, 2, 3, 4, 5].map((star) => (
-                                <button
-                                    key={star}
-                                    type="button"
-                                    onMouseEnter={() => setHoveredRating(star)}
-                                    onMouseLeave={() => setHoveredRating(0)}
-                                    onClick={() => setRating(star)}
-                                    className="p-1"
-                                >
-                                    <Star
-                                        className={`h-6 w-6 ${star <= (hoveredRating || rating)
-                                                ? "fill-yellow-400 text-yellow-400"
-                                                : "text-gray-300"
-                                            }`}
-                                    />
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-                )}
 
                 {/* Comment textarea */}
                 <div className="mb-4">

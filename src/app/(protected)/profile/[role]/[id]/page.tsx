@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -58,6 +58,7 @@ function getInitials(name: string): string {
 export default function ProfilePage() {
     const params = useParams();
     const router = useRouter();
+    const searchParams = useSearchParams();
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [employeeProfile, setEmployeeProfile] = useState<EmployeeProfileData | null>(null);
@@ -65,6 +66,10 @@ export default function ProfilePage() {
 
     const role = params.role as string;
     const userId = Number(params.id);
+    
+    // Get query params for fallback display
+    const queryName = searchParams.get('name');
+    const queryEmail = searchParams.get('email');
 
     useEffect(() => {
         const fetchProfile = async () => {
@@ -91,8 +96,24 @@ export default function ProfilePage() {
                 console.error("Error fetching profile:", err);
                 const status = err?.response?.status;
                 if (status === 404 || status === 400) {
-                    // User doesn't have this type of profile
-                    setError(`This user doesn't have a ${role} profile yet.`);
+                    // User doesn't have this type of profile yet, show empty state instead of error
+                    if (role === "employee") {
+                        setEmployeeProfile({
+                            id: 0,
+                            userId: userId,
+                            bio: null,
+                            skills: null,
+                            dob: null,
+                            gender: null
+                        });
+                    } else if (role === "employer") {
+                        setEmployerProfile({
+                            id: 0,
+                            userId: userId,
+                            companyName: undefined,
+                            companyAddress: null
+                        });
+                    }
                 } else {
                     setError("Failed to load profile. Please try again later.");
                 }
@@ -138,11 +159,21 @@ export default function ProfilePage() {
             </Button>
 
             {role === "employee" && employeeProfile && (
-                <EmployeeProfileView profile={employeeProfile} avatarUrl={avatarUrl} userId={userId} />
+                <EmployeeProfileView 
+                    profile={employeeProfile} 
+                    avatarUrl={avatarUrl} 
+                    userId={userId} 
+                    displayName={queryName}
+                    displayEmail={queryEmail}
+                />
             )}
 
             {role === "employer" && employerProfile && (
-                <EmployerProfileView profile={employerProfile} avatarUrl={avatarUrl} userId={userId} />
+                <EmployerProfileView 
+                    profile={employerProfile} 
+                    avatarUrl={avatarUrl} 
+                    userId={userId} 
+                />
             )}
         </div>
     );
@@ -152,11 +183,15 @@ export default function ProfilePage() {
 function EmployeeProfileView({
     profile,
     avatarUrl,
-    userId
+    userId,
+    displayName,
+    displayEmail
 }: {
     profile: EmployeeProfileData;
     avatarUrl: string;
     userId: number;
+    displayName?: string | null;
+    displayEmail?: string | null;
 }) {
     // Parse skills
     const activeSkills = profile.skills
@@ -205,8 +240,15 @@ function EmployeeProfileView({
                             </div>
 
                             <h1 className="text-2xl font-bold mb-1">
-                                Worker Profile
+                                {displayName || "Worker Profile"}
                             </h1>
+                            
+                            {displayEmail && (
+                                <div className="flex items-center gap-2 text-muted-foreground">
+                                    <Mail className="h-4 w-4" />
+                                    <span className="text-sm">{displayEmail}</span>
+                                </div>
+                            )}
 
                             {/* Quick Stats */}
                             <div className="flex items-center gap-4 text-sm text-muted-foreground mt-3">

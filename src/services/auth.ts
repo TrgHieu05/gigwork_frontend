@@ -76,8 +76,20 @@ export const authService = {
      * POST /api/auth/send-verification
      */
     async sendVerification(): Promise<{ success: boolean; link?: string }> {
-        const response = await api.post('/api/auth/send-verification');
-        return response.data;
+        console.log('Sending verification email...');
+        const token = localStorage.getItem('token');
+        if (!token) {
+            console.error('No token found when trying to send verification email');
+            throw new Error('Not authenticated');
+        }
+        try {
+            const response = await api.post('/api/auth/send-verification');
+            console.log('Verification email sent successfully:', response.data);
+            return response.data;
+        } catch (error) {
+            console.error('Error sending verification email API call:', error);
+            throw error;
+        }
     },
 
     /**

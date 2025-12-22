@@ -69,7 +69,7 @@ export function SignUpFormEmployer() {
         await authService.sendVerification()
       } catch (verificationError) {
         console.error("Failed to send verification email:", verificationError)
-        // We don't block registration if email sending fails, but we could notify the user
+        alert("Account created successfully, but we encountered an issue sending the verification email. Please request a new verification link from your profile page.")
       }
 
       // Redirect to setup profile page

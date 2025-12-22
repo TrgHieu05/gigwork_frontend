@@ -5,7 +5,6 @@ export interface Review {
     jobId: number;
     reviewerId: number;
     revieweeId: number;
-    rating: number;
     comment?: string;
     createdAt: string;
     reviewer?: {
@@ -21,7 +20,6 @@ export interface Review {
 export interface CreateReviewData {
     applicationId: number;
     revieweeId: number;
-    rating: number;
     comment?: string;
 }
 

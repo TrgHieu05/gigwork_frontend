@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import useSWR from 'swr';
 import { jobsService, Job, JobListResponse, JobFilters } from '@/services/jobs';
 
@@ -22,8 +23,10 @@ export function useJobs(filters?: JobFilters) {
         }
     );
 
+    const jobs = useMemo(() => data?.items || [], [data]);
+
     return {
-        jobs: data?.items || [],
+        jobs,
         meta: data?.meta,
         isLoading,
         isError: !!error,

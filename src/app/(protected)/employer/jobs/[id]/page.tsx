@@ -25,8 +25,10 @@ import {
 } from "lucide-react";
 import { jobsService, Job, getJobLocationString } from "@/services/jobs";
 import { applicationsService } from "@/services/applications";
+import { reviewsService } from "@/services/reviews";
 import { authService } from "@/services/auth";
 import { EditJobModal } from "@/components/feature/employer/EditJobModal";
+import { ReviewModal } from "@/components/shared/ReviewModal";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -74,6 +76,10 @@ export default function EmployerJobDetailsPage() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  
+  // Review state
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const [selectedApplication, setSelectedApplication] = useState<Application | null>(null);
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -171,6 +177,33 @@ export default function EmployerJobDetailsPage() {
     }
   };
 
+  const handleReviewClick = (app: Application) => {
+    setSelectedApplication(app);
+    setReviewModalOpen(true);
+  };
+
+  const handleSubmitReview = async (comment: string) => {
+    if (!selectedApplication) return;
+
+    try {
+      // Ensure IDs are numbers
+      await reviewsService.createReview({
+        applicationId: Number(selectedApplication.id),
+        revieweeId: Number(selectedApplication.workerId),
+        comment: comment || "",
+      });
+      alert("Review submitted successfully!");
+    } catch (err) {
+      console.error("Error submitting review:", err);
+      // Log details for debugging
+      if (err && typeof err === 'object' && 'response' in err) {
+          const axiosError = err as any;
+          console.error("Review API Error Response:", axiosError.response?.data);
+      }
+      alert("Failed to submit review");
+    }
+  };
+
   const handleDelete = async () => {
     if (!job) return;
 
@@ -211,7 +244,11 @@ export default function EmployerJobDetailsPage() {
   const status = statusConfig[job.status] || statusConfig.open;
 
   const pendingApps = applications.filter(a => a.status === "pending");
-  const acceptedApps = applications.filter(a => a.status === "accepted");
+  const rejectedApps = applications.filter(a => a.status === "rejected");
+  const hiredApps = applications.filter(a => a.status === "accepted" || a.status === "completed");
+  
+  // Group pending and rejected into "Applications" tab
+  const candidateApps = [...pendingApps, ...rejectedApps];
 
   return (
     <div className="h-full p-6 overflow-auto">
@@ -254,7 +291,10 @@ export default function EmployerJobDetailsPage() {
         <TabsList>
           <TabsTrigger value="details">Job Details</TabsTrigger>
           <TabsTrigger value="applications">
-            Applications ({applications.length})
+            Applications ({candidateApps.length})
+          </TabsTrigger>
+          <TabsTrigger value="hired">
+            Hired ({hiredApps.length})
           </TabsTrigger>
         </TabsList>
 
@@ -336,13 +376,13 @@ export default function EmployerJobDetailsPage() {
                         <p className="text-2xl font-bold text-blue-600">
                           {applications.length}
                         </p>
-                        <p className="text-xs text-muted-foreground">Applications</p>
+                        <p className="text-xs text-muted-foreground">Total Applicants</p>
                       </div>
                       <div className="text-center p-3 bg-green-50 rounded-lg">
                         <p className="text-2xl font-bold text-green-600">
-                          {acceptedApps.length}
+                          {hiredApps.length}
                         </p>
-                        <p className="text-xs text-muted-foreground">Accepted</p>
+                        <p className="text-xs text-muted-foreground">Hired</p>
                       </div>
                     </div>
                   </CardContent>
@@ -355,20 +395,20 @@ export default function EmployerJobDetailsPage() {
         {/* Applications Tab */}
         <TabsContent value="applications" className="mt-6">
           <div className="space-y-4">
-            {applications.length === 0 ? (
+            {candidateApps.length === 0 ? (
               <Card>
                 <CardContent className="py-12 text-center">
                   <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground">No applications yet</p>
+                  <p className="text-muted-foreground">No pending or rejected applications</p>
                 </CardContent>
               </Card>
             ) : (
-              applications.map((app) => (
+              candidateApps.map((app) => (
                 <Card key={app.id}>
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <Link href={`/profile/employee/${app.workerId}`}>
+                        <Link href={`/profile/employee/${app.workerId}?name=${encodeURIComponent(app.workerName || '')}&email=${encodeURIComponent(app.workerEmail || '')}`}>
                           <Avatar className="cursor-pointer hover:ring-2 hover:ring-primary transition-all">
                             <AvatarFallback>
                               {app.workerName ? app.workerName.slice(0, 2).toUpperCase() : String(app.workerId).slice(0, 2)}
@@ -377,7 +417,7 @@ export default function EmployerJobDetailsPage() {
                         </Link>
                         <div>
                           <Link
-                            href={`/profile/employee/${app.workerId}`}
+                            href={`/profile/employee/${app.workerId}?name=${encodeURIComponent(app.workerName || '')}&email=${encodeURIComponent(app.workerEmail || '')}`}
                             className="font-medium hover:text-primary transition-colors"
                           >
                             {app.workerName || `Worker #${app.workerId}`}
@@ -407,22 +447,73 @@ export default function EmployerJobDetailsPage() {
                             </Button>
                           </>
                         )}
-                        {app.status === "accepted" && (
-                          <>
-                            <Badge className="bg-green-100 text-green-700">Accepted</Badge>
-                            <Button
-                              size="small"
-                              onClick={() => handleComplete(app.workerId)}
-                            >
-                              Mark Complete
-                            </Button>
-                          </>
-                        )}
                         {app.status === "rejected" && (
                           <Badge className="bg-red-100 text-red-700">Rejected</Badge>
                         )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </div>
+        </TabsContent>
+
+        {/* Hired Tab */}
+        <TabsContent value="hired" className="mt-6">
+          <div className="space-y-4">
+            {hiredApps.length === 0 ? (
+              <Card>
+                <CardContent className="py-12 text-center">
+                  <Briefcase className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">No hired workers yet</p>
+                </CardContent>
+              </Card>
+            ) : (
+              hiredApps.map((app) => (
+                <Card key={app.id}>
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <Link href={`/profile/employee/${app.workerId}?name=${encodeURIComponent(app.workerName || '')}&email=${encodeURIComponent(app.workerEmail || '')}`}>
+                          <Avatar className="cursor-pointer hover:ring-2 hover:ring-primary transition-all">
+                            <AvatarFallback>
+                              {app.workerName ? app.workerName.slice(0, 2).toUpperCase() : String(app.workerId).slice(0, 2)}
+                            </AvatarFallback>
+                          </Avatar>
+                        </Link>
+                        <div>
+                          <Link
+                            href={`/profile/employee/${app.workerId}?name=${encodeURIComponent(app.workerName || '')}&email=${encodeURIComponent(app.workerEmail || '')}`}
+                            className="font-medium hover:text-primary transition-colors"
+                          >
+                            {app.workerName || `Worker #${app.workerId}`}
+                          </Link>
+                          <p className="text-sm text-muted-foreground">
+                            Hired {new Date(app.appliedAt).toLocaleDateString()}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {app.status === "accepted" && (
+                          <Button
+                            size="small"
+                            onClick={() => handleComplete(app.workerId)}
+                          >
+                            Mark Complete
+                          </Button>
+                        )}
                         {app.status === "completed" && (
-                          <Badge className="bg-blue-100 text-blue-700">Completed</Badge>
+                          <>
+                            <Badge className="bg-blue-100 text-blue-700">Completed</Badge>
+                            <Button
+                              size="small"
+                              variant="outline"
+                              onClick={() => handleReviewClick(app)}
+                            >
+                              Review
+                            </Button>
+                          </>
                         )}
                       </div>
                     </div>
@@ -442,6 +533,18 @@ export default function EmployerJobDetailsPage() {
             fetchData();
             setShowEditModal(false);
           }}
+        />
+      )}
+
+      {selectedApplication && (
+        <ReviewModal
+          isOpen={reviewModalOpen}
+          onClose={() => {
+            setReviewModalOpen(false);
+            setSelectedApplication(null);
+          }}
+          onSubmit={handleSubmitReview}
+          revieweeName={selectedApplication.workerName || `Worker #${selectedApplication.workerId}`}
         />
       )}
 

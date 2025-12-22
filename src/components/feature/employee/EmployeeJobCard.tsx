@@ -21,7 +21,6 @@ export interface EmployeeJob {
     // For completed jobs
     completedDate?: string;
     earned?: string;
-    rating?: number;
     // Confirmation status
     paymentConfirmed?: boolean;
 }
@@ -30,7 +29,7 @@ interface EmployeeJobCardProps {
     job: EmployeeJob;
     variant?: "active" | "completed";
     onConfirmPayment?: (jobId: string) => void;
-    onSubmitComment?: (jobId: string, comment: string, rating?: number) => void;
+    onSubmitComment?: (jobId: string, comment: string) => void;
 }
 
 export function EmployeeJobCard({
@@ -48,8 +47,8 @@ export function EmployeeJobCard({
         onConfirmPayment?.(job.id);
     };
 
-    const handleSubmitComment = (comment: string, rating?: number) => {
-        onSubmitComment?.(job.id, comment, rating);
+    const handleSubmitComment = (comment: string) => {
+        onSubmitComment?.(job.id, comment);
     };
 
     return (
@@ -70,17 +69,6 @@ export function EmployeeJobCard({
                             {isCompleted ? (
                                 <>
                                     <p className="font-semibold text-green-600">{job.earned}</p>
-                                    {job.rating && (
-                                        <div className="flex items-center gap-0.5 mt-1 justify-end">
-                                            {[...Array(5)].map((_, i) => (
-                                                <Star
-                                                    key={i}
-                                                    className={`h-3 w-3 ${i < job.rating! ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
-                                                        }`}
-                                                />
-                                            ))}
-                                        </div>
-                                    )}
                                 </>
                             ) : (
                                 <>
@@ -156,8 +144,7 @@ export function EmployeeJobCard({
                 onClose={closeModal}
                 onSubmit={handleSubmitComment}
                 recipientName={job.company}
-                showRating={true}
-                title="Rate & Comment Employer"
+                title="Comment Employer"
             />
         </>
     );

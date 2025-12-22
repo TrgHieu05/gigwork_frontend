@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { JobCard, JobCardData, JobStatus } from "@/components/feature/employer/JobCard";
@@ -27,7 +27,9 @@ function transformApiJob(apiJob: Job, applications: JobApplicationFull[]): JobCa
     };
 
     const hiredCount = applications.filter(app =>
-        app.status.toLowerCase() === 'accepted' || app.status.toLowerCase() === 'hired'
+        app.status.toLowerCase() === 'accepted' || 
+        app.status.toLowerCase() === 'hired' || 
+        app.status.toLowerCase() === 'completed'
     ).length;
 
     return {
@@ -69,11 +71,20 @@ export default function MyJobsPage() {
     }, [apiJobs, userData?.id]);
 
     // Fetch applications and transform jobs
+    const prevJobsRef = useRef<string>("");
+
     useEffect(() => {
         if (myJobs.length === 0) {
             setJobs([]);
             return;
         }
+
+        // Prevent infinite loops by comparing job IDs
+        const currentJobsStr = JSON.stringify(myJobs.map(j => j.id).sort());
+        if (currentJobsStr === prevJobsRef.current) {
+            return;
+        }
+        prevJobsRef.current = currentJobsStr;
 
         const fetchApplications = async () => {
             setIsLoadingApps(true);

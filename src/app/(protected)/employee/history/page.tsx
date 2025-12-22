@@ -89,7 +89,6 @@ export default function EmployeeHistoryPage() {
                                 completedDate: app.appliedAt ? new Date(app.appliedAt).toLocaleDateString() : "Recently",
                                 duration: jobDetail?.durationDays ? `${jobDetail.durationDays} days` : "N/A",
                                 earned: jobDetail?.salary ? `${jobDetail.salary.toLocaleString()} VND` : "N/A",
-                                rating: 0,
                             };
                         });
 
