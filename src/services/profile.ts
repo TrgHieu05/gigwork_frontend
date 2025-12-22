@@ -92,7 +92,8 @@ export const profileService = {
      * GET /api/users/me
      */
     async getCurrentUser(): Promise<UserProfile> {
-        const response = await api.get<UserProfile>('/api/users/me');
+        // Add timestamp to prevent caching
+        const response = await api.get<UserProfile>(`/api/users/me?t=${new Date().getTime()}`);
         return response.data;
     },
 

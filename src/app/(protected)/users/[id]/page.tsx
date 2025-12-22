@@ -433,9 +433,25 @@ export default function UserProfilePage() {
                             </CardHeader>
                             <CardContent>
                                 {(() => {
-                                    // Handle skills as { list: string[] } structure from API
-                                    const skillsData = profile.workerProfile?.skills as { list?: string[] } | null;
-                                    const skillsList = skillsData?.list || [];
+                                    // Handle skills - handle both Record<string, boolean> and legacy formats
+                                    const rawSkills = profile.workerProfile?.skills;
+                                    let skillsList: string[] = [];
+
+                                    if (rawSkills) {
+                                        // Check if it's the expected Record<string, boolean> format
+                                        // We assume if it's an object and values are booleans, it's the skills map
+                                        const entries = Object.entries(rawSkills);
+                                        const isSkillMap = entries.some(([, val]) => typeof val === 'boolean');
+                                        
+                                        if (isSkillMap) {
+                                            skillsList = entries
+                                                .filter(([, value]) => value === true)
+                                                .map(([key]) => key);
+                                        } else if ('list' in rawSkills && Array.isArray((rawSkills as any).list)) {
+                                            // Handle potential legacy format { list: string[] }
+                                            skillsList = (rawSkills as any).list;
+                                        }
+                                    }
 
                                     if (skillsList.length > 0) {
                                         return (
