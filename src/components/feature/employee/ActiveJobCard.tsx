@@ -34,7 +34,7 @@ export function ActiveJobCard({ job }: ActiveJobCardProps) {
                 <div className="text-right">
                     <p className="font-semibold text-primary">{job.salary}</p>
                     <Badge
-                        className={`mt-1 ${job.status === "In Progress"
+                        className={`mt-1 ${job.status === "In Progress" || job.status === "Open"
                                 ? "bg-green-100 text-green-700"
                                 : "bg-blue-100 text-blue-700"
                             }`}

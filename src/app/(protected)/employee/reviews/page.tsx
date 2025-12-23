@@ -12,6 +12,15 @@ import { authService } from "@/services/auth";
 import { profileService } from "@/services/profile";
 import { ReviewModal } from "@/components/shared/ReviewModal";
 import Link from "next/link";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface CompletedJobWithReview {
     job: Job;
@@ -26,6 +35,7 @@ export default function EmployeeReviewsPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [completedJobs, setCompletedJobs] = useState<CompletedJobWithReview[]>([]);
     const [reviewModalOpen, setReviewModalOpen] = useState(false);
+    const [showSuccessModal, setShowSuccessModal] = useState(false);
     const [selectedJob, setSelectedJob] = useState<CompletedJobWithReview | null>(null);
 
     useEffect(() => {
@@ -140,7 +150,7 @@ export default function EmployeeReviewsPage() {
 
             setReviewModalOpen(false);
             setSelectedJob(null);
-            // alert("Review submitted successfully!"); // Optional: use toast instead
+            setShowSuccessModal(true);
         } catch (error) {
             console.error("Failed to submit review:", error);
             alert("Failed to submit review. Please try again.");
@@ -248,6 +258,23 @@ export default function EmployeeReviewsPage() {
                     revieweeName={selectedJob.employerName}
                 />
             )}
+
+            {/* Success Modal */}
+            <AlertDialog open={showSuccessModal} onOpenChange={setShowSuccessModal}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Review Submitted!</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Your review has been successfully submitted.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogAction onClick={() => setShowSuccessModal(false)}>
+                            Close
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

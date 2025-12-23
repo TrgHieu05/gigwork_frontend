@@ -106,7 +106,7 @@ export default function EmployerDashboard() {
     return myJobs.slice(0, 5).map((job) => ({
       id: String(job.id),
       title: job.title,
-      status: job.status === "open" ? "active" : job.status === "completed" ? "closed" : "active",
+      status: job.status as any,
       postedDate: new Date(job.startDate).toLocaleDateString("en-GB"),
       applicationsCount: allApplications.filter(app => app.jobId === job.id).length,
     }));

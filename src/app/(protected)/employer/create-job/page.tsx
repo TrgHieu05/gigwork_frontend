@@ -23,6 +23,15 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
     ArrowLeft,
     Briefcase,
     MapPin,
@@ -63,6 +72,7 @@ export default function CreateJobPage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [showProfileRequiredModal, setShowProfileRequiredModal] = useState(false);
+    const [showSuccessModal, setShowSuccessModal] = useState(false);
     const [formData, setFormData] = useState<JobFormData>({
         title: "",
         description: "",
@@ -135,7 +145,7 @@ export default function CreateJobPage() {
                 type: formData.type,
             });
 
-            router.push("/employer/my-jobs");
+            setShowSuccessModal(true);
         } catch (err: any) {
             console.error("Error creating job:", err);
 
@@ -393,6 +403,23 @@ export default function CreateJobPage() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            {/* Success Modal */}
+            <AlertDialog open={showSuccessModal} onOpenChange={setShowSuccessModal}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Job Posted Successfully!</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Your job has been created and is now visible to potential workers.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogAction onClick={() => router.push("/employer/my-jobs")}>
+                            Go to My Jobs
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

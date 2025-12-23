@@ -14,6 +14,15 @@ import {
 import Link from "next/link";
 import { useRole } from "@/contexts/RoleContext";
 
+const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
+    open: { label: "Open", variant: "default" },
+    full: { label: "Full", variant: "secondary" },
+    closed: { label: "Closed", variant: "outline" },
+    upcoming: { label: "Upcoming", variant: "outline" },
+    ongoing: { label: "Ongoing", variant: "secondary" },
+    completed: { label: "Completed", variant: "secondary" },
+};
+
 export interface SearchJobCardProps {
     job: {
         id: string;
@@ -28,6 +37,7 @@ export interface SearchJobCardProps {
         postedDate: string;
         category: string;
         description: string;
+        status: string;
         isUrgent?: boolean;
     };
     isSaved?: boolean;
@@ -57,6 +67,9 @@ export function SearchJobCard({
                                             {job.title}
                                         </h3>
                                     </Link>
+                                    <Badge variant={statusConfig[job.status]?.variant || "outline"}>
+                                        {statusConfig[job.status]?.label || job.status}
+                                    </Badge>
                                     {job.isUrgent && (
                                         <Badge variant="destructive" className="text-xs">Urgent</Badge>
                                     )}

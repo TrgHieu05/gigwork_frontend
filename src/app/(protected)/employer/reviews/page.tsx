@@ -13,6 +13,15 @@ import { applicationsService } from "@/services/applications";
 import { authService } from "@/services/auth";
 import Link from "next/link";
 import { ReviewModal } from "@/components/shared/ReviewModal";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface HiredWorkerReview {
   workerId: number;
@@ -35,6 +44,7 @@ export default function EmployerReviewsPage() {
   const [completedJobs, setCompletedJobs] = useState<CompletedJobWithReviews[]>([]);
   const [expandedJobId, setExpandedJobId] = useState<number | null>(null);
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [selectedWorker, setSelectedWorker] = useState<HiredWorkerReview | null>(null);
 
   const handleWriteReview = (worker: HiredWorkerReview) => {
@@ -87,7 +97,7 @@ export default function EmployerReviewsPage() {
 
       setReviewModalOpen(false);
       setSelectedWorker(null);
-      alert("Review submitted successfully!");
+      setShowSuccessModal(true);
     } catch (error: any) {
       console.error("Failed to submit review:", error);
       if (error.response) {
@@ -383,6 +393,23 @@ export default function EmployerReviewsPage() {
           revieweeName={selectedWorker.workerName}
         />
       )}
+
+      {/* Success Modal */}
+      <AlertDialog open={showSuccessModal} onOpenChange={setShowSuccessModal}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Review Submitted!</AlertDialogTitle>
+            <AlertDialogDescription>
+              Your review has been successfully submitted.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setShowSuccessModal(false)}>
+              Close
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

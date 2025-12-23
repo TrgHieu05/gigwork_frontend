@@ -39,7 +39,7 @@ interface JobCardProps {
 }
 
 const statusConfig: Record<JobStatus, { label: string; variant: "default" | "secondary" | "outline" | "destructive" }> = {
-    open: { label: "Active", variant: "default" },
+    open: { label: "Open", variant: "default" },
     full: { label: "Full", variant: "secondary" },
     closed: { label: "Closed", variant: "secondary" },
     upcoming: { label: "Upcoming", variant: "outline" },

@@ -6,7 +6,7 @@ import Link from "next/link";
 export interface Job {
     id: string;
     title: string;
-    status: "active" | "closed" | "draft";
+    status: "open" | "ongoing" | "full" | "completed" | "active" | "closed" | "draft";
     postedDate: string;
     applicationsCount: number;
 }
@@ -17,6 +17,10 @@ interface RecentJobsCardProps {
 
 const statusConfig = {
     active: { label: "Active", variant: "default" as const },
+    open: { label: "Open", variant: "default" as const },
+    ongoing: { label: "Ongoing", variant: "default" as const },
+    full: { label: "Full", variant: "secondary" as const },
+    completed: { label: "Completed", variant: "secondary" as const },
     closed: { label: "Closed", variant: "secondary" as const },
     draft: { label: "Draft", variant: "outline" as const },
 };

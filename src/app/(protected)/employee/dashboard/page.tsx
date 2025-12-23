@@ -112,7 +112,8 @@ export default function EmployeeDashboard() {
                         // Map status to display string
                         const displayStatus = job.status === 'ongoing' ? 'Ongoing'
                             : job.status === 'accepted' ? 'Accepted'
-                                : 'Upcoming';
+                                : job.status === 'open' ? 'Open'
+                                    : 'Upcoming';
 
                         return {
                             id: String(job.id),

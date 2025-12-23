@@ -107,6 +107,14 @@ export function LocationSelector({
 
     // Handlers
     const handleProvinceChange = async (provinceCodeStr: string) => {
+        if (provinceCodeStr === "all") {
+            setCodes({ province: undefined, district: undefined, ward: undefined });
+            setDistricts([]);
+            setWards([]);
+            onChange({ ...value, province: "", city: "", ward: "" });
+            return;
+        }
+
         const provinceCode = Number(provinceCodeStr);
         const province = provinces.find(p => p.code === provinceCode);
         
@@ -133,6 +141,13 @@ export function LocationSelector({
     };
 
     const handleDistrictChange = async (districtCodeStr: string) => {
+        if (districtCodeStr === "all") {
+            setCodes(prev => ({ ...prev, district: undefined, ward: undefined }));
+            setWards([]);
+            onChange({ ...value, city: "", ward: "" });
+            return;
+        }
+
         const districtCode = Number(districtCodeStr);
         const district = districts.find(d => d.code === districtCode);
         
@@ -154,6 +169,12 @@ export function LocationSelector({
     };
 
     const handleWardChange = (wardCodeStr: string) => {
+        if (wardCodeStr === "all") {
+            setCodes(prev => ({ ...prev, ward: undefined }));
+            onChange({ ...value, ward: "" });
+            return;
+        }
+
         const wardCode = Number(wardCodeStr);
         const ward = wards.find(w => w.code === wardCode);
         
@@ -181,13 +202,14 @@ export function LocationSelector({
             <div className={`flex flex-col lg:flex-row gap-2 ${className}`}>
                 <Select
                     disabled={disabled || loading.provinces}
-                    value={codes.province?.toString() || ""}
+                    value={loading.provinces ? "" : (codes.province?.toString() || "all")}
                     onValueChange={handleProvinceChange}
                 >
                     <SelectTrigger className="w-full lg:w-[180px]">
                         <SelectValue placeholder={loading.provinces ? "Loading..." : "Province/City"} />
                     </SelectTrigger>
                     <SelectContent>
+                        <SelectItem value="all">All Provinces</SelectItem>
                         {provinces.map((p) => (
                             <SelectItem key={p.code} value={p.code.toString()}>
                                 {p.name}
@@ -198,13 +220,14 @@ export function LocationSelector({
 
                 <Select
                     disabled={disabled || !codes.province || loading.districts}
-                    value={codes.district?.toString() || ""}
+                    value={loading.districts ? "" : (codes.district?.toString() || "all")}
                     onValueChange={handleDistrictChange}
                 >
                     <SelectTrigger className="w-full lg:w-[160px]">
                         <SelectValue placeholder={loading.districts ? "Loading..." : "District"} />
                     </SelectTrigger>
                     <SelectContent>
+                        <SelectItem value="all">All Districts</SelectItem>
                         {districts.map((d) => (
                             <SelectItem key={d.code} value={d.code.toString()}>
                                 {d.name}
@@ -215,13 +238,14 @@ export function LocationSelector({
 
                 <Select
                     disabled={disabled || !codes.district || loading.wards}
-                    value={codes.ward?.toString() || ""}
+                    value={loading.wards ? "" : (codes.ward?.toString() || "all")}
                     onValueChange={handleWardChange}
                 >
                     <SelectTrigger className="w-full lg:w-[160px]">
                         <SelectValue placeholder={loading.wards ? "Loading..." : "Ward"} />
                     </SelectTrigger>
                     <SelectContent>
+                        <SelectItem value="all">All Wards</SelectItem>
                         {wards.map((w) => (
                             <SelectItem key={w.code} value={w.code.toString()}>
                                 {w.name}
@@ -301,6 +325,7 @@ export function LocationSelector({
                             <SelectValue placeholder={loading.wards ? "Loading..." : "Select Ward"} />
                         </SelectTrigger>
                         <SelectContent>
+                            <SelectItem value="all">All Wards</SelectItem>
                             {wards.map((w) => (
                                 <SelectItem key={w.code} value={w.code.toString()}>
                                     {w.name}

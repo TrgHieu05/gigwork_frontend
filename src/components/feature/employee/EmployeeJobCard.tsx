@@ -64,7 +64,7 @@ export function EmployeeJobCard({
                                 <>
                                     <p className="font-semibold text-primary">{job.salary}</p>
                                     <Badge
-                                        className={`mt-1 ${job.status === "In Progress"
+                                        className={`mt-1 ${job.status === "In Progress" || job.status === "Ongoing" || job.status === "Open"
                                                 ? "bg-green-100 text-green-700"
                                                 : job.status === "Completed"
                                                     ? "bg-gray-100 text-gray-700"

@@ -30,6 +30,7 @@ export interface Job {
     postedDate: string;
     category: string;
     description: string;
+    status: string;
     isUrgent?: boolean;
 }
 
@@ -61,6 +62,7 @@ export function transformApiJob(apiJob: ApiJob): Job {
         postedDate: apiJob.createdAt ? new Date(apiJob.createdAt).toLocaleDateString() : "Recently",
         category: apiJob.type,
         description: apiJob.description,
+        status: apiJob.status,
         isUrgent: apiJob.status === "open" && apiJob.workerQuota > 5,
     };
 }

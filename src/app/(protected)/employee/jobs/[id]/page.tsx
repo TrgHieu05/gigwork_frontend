@@ -31,8 +31,6 @@ import {
 } from "lucide-react";
 import { jobsService, Job, getJobLocationString } from "@/services/jobs";
 import { applicationsService } from "@/services/applications";
-import { profileService } from "@/services/profile";
-import { authService } from "@/services/auth";
 
 const typeLabels: Record<string, string> = {
     physical_work: "Physical Work",
@@ -68,24 +66,19 @@ export default function EmployeeJobDetailsPage() {
             try {
                 const jobId = Number(params.id);
 
-                // Fetch job details and user profile in parallel
-                const [jobData, userProfile] = await Promise.all([
+                // Fetch job details and check application status in parallel
+                const [jobData, existingApplications] = await Promise.all([
                     jobsService.getJob(jobId),
-                    profileService.getCurrentUser().catch(() => null)
+                    applicationsService.getByJobId(jobId).catch(() => [])
                 ]);
 
                 setJob(jobData);
 
                 // Check if user has applied for this job
-                if (userProfile && userProfile.recentApplications) {
-                    const existingApp = userProfile.recentApplications.find(
-                        app => app.jobId === jobId
-                    );
-
-                    if (existingApp) {
-                        setHasApplied(true);
-                        setApplicationStatus(existingApp.status);
-                    }
+                if (existingApplications && existingApplications.length > 0) {
+                    const existingApp = existingApplications[0];
+                    setHasApplied(true);
+                    setApplicationStatus(existingApp.status);
                 }
             } catch (err) {
                 console.error("Error fetching data:", err);
@@ -114,7 +107,7 @@ export default function EmployeeJobDetailsPage() {
             // Extract error message from API response
             let errorMessage = "Failed to apply for this job";
             if (err && typeof err === "object" && "response" in err) {
-                const axiosError = err as { response?: { data?: { detail?: string; title?: string; message?: string }; status?: number } };
+                const axiosError = err as { response?: { data?: { detail?: string; title?: string; message?: string; errorCode?: string }; status?: number } };
                 if (axiosError.response?.data?.detail) {
                     errorMessage = axiosError.response.data.detail;
                 } else if (axiosError.response?.data?.title) {
@@ -124,7 +117,13 @@ export default function EmployeeJobDetailsPage() {
                 } else if (axiosError.response?.status === 403) {
                     errorMessage = "You must be registered as a worker to apply for jobs";
                 } else if (axiosError.response?.status === 409) {
-                    errorMessage = "This job is no longer accepting applications";
+                    if (axiosError.response?.data?.errorCode === 'ALREADY_APPLIED') {
+                        errorMessage = "You have already applied for this job";
+                        setHasApplied(true);
+                        setApplicationStatus("pending");
+                    } else {
+                        errorMessage = "This job is no longer accepting applications";
+                    }
                 } else if (axiosError.response?.status === 401) {
                     errorMessage = "Please login to apply for this job";
                 }

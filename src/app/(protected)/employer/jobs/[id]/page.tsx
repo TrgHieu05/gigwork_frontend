@@ -75,6 +75,8 @@ export default function EmployerJobDetailsPage() {
   const [isOwner, setIsOwner] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showReviewSuccessModal, setShowReviewSuccessModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   
   // Review state
@@ -179,7 +181,8 @@ export default function EmployerJobDetailsPage() {
         revieweeId: Number(selectedApplication.workerId),
         comment: comment || "",
       });
-      alert("Review submitted successfully!");
+      setReviewModalOpen(false);
+      setShowReviewSuccessModal(true);
     } catch (err) {
       console.error("Error submitting review:", err);
       // Log details for debugging
@@ -196,17 +199,20 @@ export default function EmployerJobDetailsPage() {
     }
   };
 
-  const handleDelete = async () => {
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent dialog from closing immediately
     if (!job) return;
 
     setIsDeleting(true);
     try {
       await jobsService.deleteJob(job.id);
-      router.push("/employer/my-jobs");
+      setShowDeleteDialog(false);
+      setShowSuccessModal(true);
     } catch (err) {
       console.error("Error deleting:", err);
       alert("Failed to delete job");
       setIsDeleting(false);
+      setShowDeleteDialog(false);
     }
   };
 
@@ -545,10 +551,7 @@ export default function EmployerJobDetailsPage() {
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={(e) => {
-                e.preventDefault();
-                handleDelete();
-              }}
+              onClick={handleDelete}
               className="bg-red-600 hover:bg-red-700"
               disabled={isDeleting}
             >
@@ -560,6 +563,40 @@ export default function EmployerJobDetailsPage() {
               ) : (
                 "Delete"
               )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Success Modal */}
+      <AlertDialog open={showSuccessModal} onOpenChange={setShowSuccessModal}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Job Deleted Successfully</AlertDialogTitle>
+            <AlertDialogDescription>
+              The job has been removed from your listings.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => router.push("/employer/my-jobs")}>
+              Go to My Jobs
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Review Success Modal */}
+      <AlertDialog open={showReviewSuccessModal} onOpenChange={setShowReviewSuccessModal}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Review Submitted!</AlertDialogTitle>
+            <AlertDialogDescription>
+              Your review has been successfully submitted.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setShowReviewSuccessModal(false)}>
+              Close
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
