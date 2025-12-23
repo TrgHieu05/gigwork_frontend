@@ -12,7 +12,6 @@ import {
     Phone,
     Calendar,
     User,
-    Star,
     Loader2,
     Pencil,
     Camera,
@@ -97,6 +96,7 @@ export default function UserProfilePage() {
                 // Try to fetch employee profile, if fails try employer
                 try {
                     const employeeProfile = await profileService.getEmployeeProfile(profileId);
+                    console.log("DEBUG: employeeProfile received:", employeeProfile);
                     // Build partial UserProfile from employee data
                     setProfile({
                         id: profileId,
@@ -107,19 +107,19 @@ export default function UserProfilePage() {
                         createdAt: new Date().toISOString(),
                         updatedAt: new Date().toISOString(),
                         isActive: true,
-                        ratingAvg: 0,
-                        ratingCount: 0,
                         workerProfile: {
                             bio: employeeProfile.bio,
                             skills: employeeProfile.skills as Record<string, boolean> | null,
                             dob: employeeProfile.dob,
                             gender: employeeProfile.gender,
                         },
+                        reviewsTaken: employeeProfile.user?.reviewsTaken
                     });
                 } catch {
                     // If employee profile fails, try employer
                     try {
                         const employerProfile = await profileService.getEmployerProfile(profileId);
+                        console.log("DEBUG: employerProfile received:", employerProfile);
                         setProfile({
                             id: profileId,
                             email: "",
@@ -129,12 +129,11 @@ export default function UserProfilePage() {
                             createdAt: new Date().toISOString(),
                             updatedAt: new Date().toISOString(),
                             isActive: true,
-                            ratingAvg: 0,
-                            ratingCount: 0,
                             employerProfile: {
                                 companyName: employerProfile.companyName,
                                 companyAddress: employerProfile.companyAddress,
                             },
+                            reviewsTaken: employerProfile.user?.reviewsTaken
                         });
                     } catch {
                         setError("Profile not found");
@@ -292,12 +291,6 @@ export default function UserProfilePage() {
                                         : (profile.email?.split("@")[0] || "User")
                                     }
                                 </h2>
-
-                                <div className="flex items-center gap-1 mt-2">
-                                    <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                                    <span className="font-medium">{profile.ratingAvg?.toFixed(1) || "0.0"}</span>
-                                    <span className="text-muted-foreground">({profile.ratingCount || 0} reviews)</span>
-                                </div>
 
                                 {profile.isVerified && (
                                     <Badge className="mt-3 bg-green-100 text-green-700">
@@ -497,10 +490,38 @@ export default function UserProfilePage() {
                                 {isEmployer ? "Reviews from Workers" : "Reviews"}
                             </CardTitle>
                         </CardHeader>
-                        <CardContent>
-                            <p className="text-muted-foreground text-center py-8">
-                                Reviews will be displayed here
-                            </p>
+                        <CardContent className="space-y-4">
+                            {profile.reviewsTaken && profile.reviewsTaken.length > 0 ? (
+                                profile.reviewsTaken.map((review) => {
+                                    const reviewerName = review.reviewer.employer?.companyName || 
+                                                       // review.reviewer.employee?.bio is often just a bio, not a name. 
+                                                       // Better to fallback to email username if no specific name field is available.
+                                                       // But user requested to see "comments of those who reviewed them".
+                                                       // Let's use email username as a safer fallback for employee name.
+                                                       review.reviewer.email.split('@')[0]; 
+                                    
+                                    return (
+                                        <div key={review.id} className="border-b last:border-0 pb-4 last:pb-0">
+                                            <div className="flex items-start gap-4">
+                                                <Avatar className="h-10 w-10 border">
+                                                    <AvatarFallback>{getInitials(reviewerName)}</AvatarFallback>
+                                                </Avatar>
+                                                <div className="flex-1">
+                                                    <div className="flex items-center justify-between mb-1">
+                                                        <h4 className="font-medium">{reviewerName}</h4>
+                                                        <span className="text-xs text-muted-foreground">{formatDate(review.createdAt)}</span>
+                                                    </div>
+                                                    <p className="text-sm text-foreground whitespace-pre-line">{review.comment}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })
+                            ) : (
+                                <p className="text-muted-foreground text-center py-8">
+                                    No reviews yet.
+                                </p>
+                            )}
                         </CardContent>
                     </Card>
                 </div>

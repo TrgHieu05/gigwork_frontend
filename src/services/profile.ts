@@ -2,17 +2,42 @@ import api from '@/lib/api';
 import { JobLocation } from './jobs';
 
 // Employee profile types
+export interface Review {
+    id: number;
+    comment: string | null;
+    createdAt: string;
+    reviewer: {
+        id: number;
+        email: string;
+        employer?: {
+            companyName: string;
+        } | null;
+        employee?: {
+            bio: string | null;
+        } | null;
+        profileImages?: {
+            id: number;
+        }[];
+    };
+}
+
 export interface EmployeeProfile {
     bio?: string;
     skills?: Record<string, unknown>;
     dob?: string;
     gender?: string;
+    user?: {
+        reviewsTaken: Review[];
+    };
 }
 
 // Employer profile types  
 export interface EmployerProfile {
     companyName: string;
     companyAddress?: string;
+    user?: {
+        reviewsTaken: Review[];
+    };
 }
 
 // Full user profile response (from GET /api/users/me or profile endpoints)
@@ -38,8 +63,7 @@ export interface UserProfile {
         companyName?: string;
         companyAddress?: string | null;
     } | null;
-    ratingAvg: number;
-    ratingCount: number;
+    reviewsTaken?: Review[];
     applicationCounts?: {
         pending: number;
         accepted: number;

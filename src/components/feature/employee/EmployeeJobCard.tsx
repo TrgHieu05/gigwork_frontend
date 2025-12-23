@@ -21,31 +21,21 @@ export interface EmployeeJob {
     // For completed jobs
     completedDate?: string;
     earned?: string;
-    // Confirmation status
-    paymentConfirmed?: boolean;
 }
 
 interface EmployeeJobCardProps {
     job: EmployeeJob;
     variant?: "active" | "completed";
-    onConfirmPayment?: (jobId: string) => void;
     onSubmitComment?: (jobId: string, comment: string) => void;
 }
 
 export function EmployeeJobCard({
     job,
     variant = "active",
-    onConfirmPayment,
     onSubmitComment,
 }: EmployeeJobCardProps) {
     const isCompleted = variant === "completed";
-    const [paymentConfirmed, setPaymentConfirmed] = useState(job.paymentConfirmed || false);
     const { isOpen, openModal, closeModal } = useCommentModal();
-
-    const handleConfirmPayment = () => {
-        setPaymentConfirmed(true);
-        onConfirmPayment?.(job.id);
-    };
 
     const handleSubmitComment = (comment: string) => {
         onSubmitComment?.(job.id, comment);
@@ -103,22 +93,6 @@ export function EmployeeJobCard({
                     <div className="flex justify-end gap-2">
                         {isCompleted && (
                             <>
-                                {paymentConfirmed ? (
-                                    <Badge className="bg-green-100 text-green-700">
-                                        <CheckCircle className="h-3 w-3 mr-1" />
-                                        Payment Confirmed
-                                    </Badge>
-                                ) : (
-                                    <Button
-                                        variant="outline"
-                                        size="small"
-                                        className="text-green-600 border-green-600 hover:bg-green-50"
-                                        onClick={handleConfirmPayment}
-                                    >
-                                        <CheckCircle className="h-4 w-4 mr-1" />
-                                        Confirm Payment
-                                    </Button>
-                                )}
                                 <Button
                                     variant="outline"
                                     size="small"

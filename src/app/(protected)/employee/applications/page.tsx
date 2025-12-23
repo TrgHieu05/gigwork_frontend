@@ -45,17 +45,6 @@ export default function EmployeeApplicationsPage() {
         }));
     }, [userData?.recentApplications]);
 
-    const handleConfirmPayment = async (applicationId: string) => {
-        try {
-            await applicationsService.completePaid(Number(applicationId));
-            // Revalidate the profile data to reflect changes
-            mutate();
-        } catch (error) {
-            console.error("Error confirming payment:", error);
-            alert("Failed to confirm payment");
-        }
-    };
-
     const filteredApplications = activeTab === "all"
         ? applications
         : applications.filter(app => app.status.toLowerCase() === activeTab);
@@ -172,14 +161,6 @@ export default function EmployeeApplicationsPage() {
                                                 <Badge className={`${config.bg} ${config.color} border-0`}>
                                                     {app.status}
                                                 </Badge>
-                                                {app.status === "Accepted" && (
-                                                    <Button
-                                                        size="small"
-                                                        onClick={() => handleConfirmPayment(app.id)}
-                                                    >
-                                                        Confirm Payment
-                                                    </Button>
-                                                )}
                                             </div>
                                         </div>
                                     </CardContent>

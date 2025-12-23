@@ -15,7 +15,6 @@ import {
     Building2,
     User,
     Calendar,
-    Star,
     Briefcase,
     Award,
 } from "lucide-react";

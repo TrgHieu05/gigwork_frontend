@@ -163,20 +163,6 @@ export default function EmployerJobDetailsPage() {
     }
   };
 
-  const handleComplete = async (workerId: number) => {
-    if (!job) return;
-    try {
-      await applicationsService.complete(job.id, workerId);
-      setApplications(apps =>
-        apps.map(a => a.workerId === workerId ? { ...a, status: "completed" } : a)
-      );
-      alert("Marked as complete!");
-    } catch (err) {
-      console.error("Error completing:", err);
-      alert("Failed to mark as complete");
-    }
-  };
-
   const handleReviewClick = (app: Application) => {
     setSelectedApplication(app);
     setReviewModalOpen(true);
@@ -186,6 +172,7 @@ export default function EmployerJobDetailsPage() {
     if (!selectedApplication) return;
 
     try {
+      console.log("Creating review...");
       // Ensure IDs are numbers
       await reviewsService.createReview({
         applicationId: Number(selectedApplication.id),
@@ -199,6 +186,11 @@ export default function EmployerJobDetailsPage() {
       if (err && typeof err === 'object' && 'response' in err) {
           const axiosError = err as any;
           console.error("Review API Error Response:", axiosError.response?.data);
+          const detail = axiosError.response?.data?.detail;
+          if (detail) {
+             alert(`Failed to submit review: ${detail}`);
+             return;
+          }
       }
       alert("Failed to submit review");
     }
@@ -495,17 +487,11 @@ export default function EmployerJobDetailsPage() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        {app.status === "accepted" && (
-                          <Button
-                            size="small"
-                            onClick={() => handleComplete(app.workerId)}
-                          >
-                            Mark Complete
-                          </Button>
-                        )}
-                        {app.status === "completed" && (
+                        {(app.status === "accepted" || app.status === "completed") && (
                           <>
-                            <Badge className="bg-blue-100 text-blue-700">Completed</Badge>
+                            <Badge className={app.status === "completed" ? "bg-blue-100 text-blue-700" : "bg-green-100 text-green-700"}>
+                              {app.status === "completed" ? "Completed" : "Accepted"}
+                            </Badge>
                             <Button
                               size="small"
                               variant="outline"

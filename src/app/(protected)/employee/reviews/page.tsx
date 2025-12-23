@@ -42,9 +42,9 @@ export default function EmployeeReviewsPage() {
                 // We need full profile to get recentApplications
                 const profile = await profileService.getCurrentUser();
                 
-                // 2. Filter completed applications
+                // 2. Filter completed or accepted applications
                 const completedApps = profile.recentApplications?.filter(
-                    app => app.status === "completed"
+                    app => app.status === "completed" || app.status === "accepted"
                 ) || [];
 
                 if (completedApps.length === 0) {
@@ -185,8 +185,8 @@ export default function EmployeeReviewsPage() {
                                                     {item.job.title}
                                                 </Link>
                                             </h3>
-                                            <Badge variant="secondary" className="bg-green-100 text-green-700 hover:bg-green-200">
-                                                Completed
+                                            <Badge variant="secondary" className={item.job.status === 'completed' ? "bg-green-100 text-green-700 hover:bg-green-200" : "bg-blue-100 text-blue-700 hover:bg-blue-200"}>
+                                                {item.job.status === 'completed' ? 'Completed' : 'Accepted'}
                                             </Badge>
                                         </div>
                                         
